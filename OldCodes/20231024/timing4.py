@@ -31,7 +31,7 @@ from aotools.turbulence.infinitephasescreen import PhaseScreenVonKarman
 # set up shwfs propagation here
 # also any memory allocation
 
-REPEAT = 10
+REPEAT = 100
 #REPEAT2 = 1000
 
 element = 10
@@ -59,7 +59,7 @@ for power in (np.arange(element) + 1):
     # FT_original = OneStepSHWFS_original(n)
     # IG_original = IgTilt_original(n)
     IPS = PhaseScreenVonKarman(n,0.1,0.1,20)
-    PROP = BlindOneAngularPropAtm(500e-9,0.1,n,0.1**2/500e-9/2.)
+    PROP = BlindOneAngularPropAtm(500e-9,0.001,n,500)#0.001**2/500e-9/2.)
     
     # for repeat in tqdm(np.arange(REPEAT)):
     #     t_IG[power - 1, repeat] = timeit.timeit(
@@ -89,72 +89,76 @@ for power in (np.arange(element) + 1):
     #         'PROP.prop(U)',
     #         setup="from __main__ import PROP, U", number=REPEAT2)/REPEAT2
     
-    # A = time.perf_counter()
-    # for repeat in np.arange(REPEAT):
-    #     IG.measure(U)
-    # B = time.perf_counter()
-    # t_IG[power - 1, repeat] = (B - A)/REPEAT
     
-    # A = time.perf_counter()
-    # for repeat in np.arange(REPEAT):
-    #     FT.measure_no_noise_no_threshold(U)
-    # B = time.perf_counter()
-    # t_FT[power - 1, repeat] = (B - A)/REPEAT
+    for repeat in np.arange(REPEAT):
+        A = time.perf_counter()
+        IG.measure(U)
+        B = time.perf_counter()
+        t_IG[power - 1, repeat] = (B - A)/REPEAT
     
-    # A = time.perf_counter()
-    # for repeat in np.arange(REPEAT):
-    #     for i in np.arange(n):
-    #         IPS.add_row()
-    # B = time.perf_counter()
-    # t_IPS[power - 1, repeat] = (B - A)/REPEAT
     
-    # A = time.perf_counter()
-    # for repeat in np.arange(REPEAT):
-    #     PROP.prop(U)
-    # B = time.perf_counter()
-    # t_PROP[power - 1, repeat] = (B - A)/REPEAT
+    for repeat in np.arange(REPEAT):
+        A = time.perf_counter()
+        FT.measure_no_noise_no_threshold(U)
+        B = time.perf_counter()
+        t_FT[power - 1, repeat] = (B - A)/REPEAT
+    
+    
+    for repeat in np.arange(REPEAT):
+        A = time.perf_counter()
+        for i in np.arange(n):
+            IPS.add_row()
+        B = time.perf_counter()
+        t_IPS[power - 1, repeat] = (B - A)/REPEAT
+    
+    
+    for repeat in np.arange(REPEAT):
+        A = time.perf_counter()
+        PROP.prop(U)
+        B = time.perf_counter()
+        t_PROP[power - 1, repeat] = (B - A)/REPEAT
     
     # 1 == 1
-    print(n,'IG')
-    %timeit IG.measure(U)
-    print(n,'FT')
-    %timeit FT.measure_no_noise_no_threshold(U)
-    print(n,'IPS')
-    %timeit for i in np.arange(n): IPS.add_row()
-    print(n,'PROP')
-    %timeit PROP.prop(U)
+    # print(n,'IG')
+    # %timeit IG.measure(U)
+    # print(n,'FT')
+    # %timeit FT.measure_no_noise_no_threshold(U)
+    # print(n,'IPS')
+    # %timeit for i in np.arange(n): IPS.add_row()
+    # print(n,'PROP')
+    # %timeit PROP.prop(U)
     
 
-# t_IG_mean = np.mean(t_IG, axis=1)
-# t_FT_mean = np.mean(t_FT, axis=1)
-# t_IPS_mean = np.mean(t_IPS, axis=1)
-# t_PROP_mean = np.mean(t_PROP, axis=1)
-# t_IG_error = np.std(t_IG, ddof=1, axis=1)
-# t_FT_error = np.std(t_FT, ddof=1, axis=1)
-# t_IPS_error = np.std(t_IPS, ddof=1, axis=1)
-# t_PROP_error = np.std(t_PROP, ddof=1, axis=1)
+t_IG_mean = np.mean(t_IG, axis=1)
+t_FT_mean = np.mean(t_FT, axis=1)
+t_IPS_mean = np.mean(t_IPS, axis=1)
+t_PROP_mean = np.mean(t_PROP, axis=1)
+t_IG_error = np.std(t_IG, ddof=1, axis=1)
+t_FT_error = np.std(t_FT, ddof=1, axis=1)
+t_IPS_error = np.std(t_IPS, ddof=1, axis=1)
+t_PROP_error = np.std(t_PROP, ddof=1, axis=1)
 
 # t_IG_mean = np.array([108,123,111,122,177,281,630,2190,7920,36700])*1e-6
 # t_IG_error = np.array([0.209,11.1,0.293,1.68,22.5,33.5,1.75,266,8.22,2700])*1e-6
 # t_FT_mean = np.array([171,163,171,185,242,448,1390,5360,30600,187000])*1e-6
 # t_FT_error = np.array([21.5,21,21.3,23.8,29.9,13.3,1.68,40.7,2270,17300])*1e-6
 
-t_IG_mean = np.array([36.5, 35.3, 37.2, 42, 55.4,
-                      112, 267, 1.09e3, 10.6e3, 45.6e3])*1e-6
-t_IG_error = np.array([880e-3, 279e-3, 587e-3, 1.71, 2.12,
-                       8.28, .877, 5.99, 152, 305])*1e-6
-t_FT_mean = np.array([57.4, 56.1, 58.7, 64.8, 88.1,
-                      208, 1.2e3, 5.87e3, 38.8e3, 150e3])*1e-6
-t_FT_error = np.array([3.28, 1.77, 2.76, 2.35, 2.64,
-                       3.39, 39.2, 68.6, 256, 1.76e3])*1e-6
-t_IPS_mean = np.array([32.6,68.1,133,262,525,
-                       1210,4460,20500,417e3,5.75e6])*1e-6
-t_IPS_error = np.array([.896,4.95,16.4,15.8,3.73,
-                        6.67,111,1700,5.92e3,258e3])*1e-6
-t_PROP_mean = np.array([76.4,77.6,78.8,86.5,123,
-                        283,2.44e3,10.9e3,73.9e3,262e3])*1e-6
-t_PROP_error = np.array([2.7,3.31,1.1,1.36,.646,
-                         9.67,99.8,366,2.8e3,11.3e3])*1e-6
+# t_IG_mean = np.array([36.5, 35.3, 37.2, 42, 55.4,
+#                       112, 267, 1.09e3, 10.6e3, 45.6e3])*1e-6
+# t_IG_error = np.array([880e-3, 279e-3, 587e-3, 1.71, 2.12,
+#                        8.28, .877, 5.99, 152, 305])*1e-6
+# t_FT_mean = np.array([57.4, 56.1, 58.7, 64.8, 88.1,
+#                       208, 1.2e3, 5.87e3, 38.8e3, 150e3])*1e-6
+# t_FT_error = np.array([3.28, 1.77, 2.76, 2.35, 2.64,
+#                        3.39, 39.2, 68.6, 256, 1.76e3])*1e-6
+# t_IPS_mean = np.array([32.6,68.1,133,262,525,
+#                        1210,4460,20500,417e3,5.75e6])*1e-6
+# t_IPS_error = np.array([.896,4.95,16.4,15.8,3.73,
+#                         6.67,111,1700,5.92e3,258e3])*1e-6
+# t_PROP_mean = np.array([76.4,77.6,78.8,86.5,123,
+#                         283,2.44e3,10.9e3,73.9e3,262e3])*1e-6
+# t_PROP_error = np.array([2.7,3.31,1.1,1.36,.646,
+#                          9.67,99.8,366,2.8e3,11.3e3])*1e-6
 
 
 plt.errorbar(N, t_IG_mean, yerr=t_IG_error, label='IG-Tilt', marker='o')
