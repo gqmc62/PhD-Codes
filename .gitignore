@@ -5,3 +5,4 @@ PhaseScreen/
 outputTestPhaseScreen/
 conf/
 __pycache__/
+*.Result
