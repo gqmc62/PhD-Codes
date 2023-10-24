@@ -1,0 +1,7 @@
+*.fits
+*.png
+*.pkl
+PhaseScreen/
+outputTestPhaseScreen/
+conf/
+__pycache__/

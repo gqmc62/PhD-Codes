@@ -1,0 +1,40 @@
+Questions to be answered in abstract.
+
+A: What is the problem you'are trying to address?
+	Can intensity-weighted slope in pupil plane be used as a faster alternative to full simulation of noiseless Shack-Hartmann wavefront sensor?
+	How much faster?
+	How well do they match in measurement throughout various fried parameter, scintillation index, fresnel zone size, pixel resolution, angular resolution, etc? What about noises?
+B: Why is it important (scientifically)?
+	So that SH-WFS simulation can be done faster, and know when this method can be applied.
+C: What is it that you've done to address the problem?
+	I have simulate both methods and measured their speed using my own code.
+	intensity-weighted uses numpy and numpy array. full shwfs propagation using fftw and numpy.
+	compare speed on only one lenslet.
+	compare slope rms difference.
+D: What are the key results (sofar)?
+	seemingly similar performance
+	2x speed gain, despite the intensity-weighted being just numpy
+E: What do you want to have done by the time of the conference?
+	get full picture of when speed gain is good.
+	and full picture of when closeness drops.
+
+
+
+Why do you need to run simulation faster?
+
+What is the big question am I looking at?
+	I want to do mcao for strong turbulence, scintillation, and wide-field.
+	--> higher number of line of sights, number of lenslet --> need more computation time than other ao
+	--> any improvement will be appreciated. -----> A&B
+
+Hypotheses
+	Should be faster
+	Valid results even in strong, whatever ...
+What have I done & initial results
+
+Limits of the application
+
+********************Problem hypothesis method results discussion conclusion. 300 words***********************************
+
+We show that we can get decreasing computational time.... shows the general trends
+we show the compared dependence of measured wavefront error on rytov number and r0
