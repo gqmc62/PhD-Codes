@@ -77,8 +77,12 @@ from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.optimize import fsolve
 from scipy.special import j1
+from aotools.turbulence.infinitephasescreen import PhaseScreenKolmogorov
+import scipy
 
+import mypropagationclass as MPROP
 import my_WFS as mwfs
+from astropy.io import fits
 
 #
 # Preferences #
@@ -593,13 +597,13 @@ def var_log_amp(N, r, d_in, L0, l0, wvl, d_out, z_list, pf):
 
     # Plots
     plt.errorbar(z_list, variance_log_amp, yerr=error_variance_log_amp,
-                 label='Simulation', color='r', marker='o', ls='')
+                 label='Simulation', color='r', marker='o', ls='', capsize=5)
     plt.plot(z_list, variance_theory_approx, label='Rytov Approximation',
              color='g', marker='', ls='--')
-    plt.hlines(0.5, xmin=z_list.min(), xmax=z_list.max(), label='Rytov#=0.5',
+    plt.hlines(0.5, xmin=z_list.min(), xmax=z_list.max(), label='Saturation Level at Rytov#=0.6',
                 color='b', ls='--')
-    plt.hlines(0.25, xmin=z_list.min(), xmax=z_list.max(), label='Rytov#=0.25',
-                color='k', ls='--')
+    # plt.hlines(0.25, xmin=z_list.min(), xmax=z_list.max(), label='Rytov#=0.25',
+    #             color='k', ls='--')
     # plt.vlines((2. * 0.563 * k**(7./6.) * cn2dz)**(-6./5.),
     #             ymin=np.nanmin(variance_log_amp),
     #             ymax=np.nanmax(variance_log_amp),
@@ -758,14 +762,14 @@ def scintillation_size(N, r, d_in, L0, l0, wvl, d_out, z_list, pf):
     for iz in np.arange(z_list.shape[0]):
         # Propagate
         # Measure out
-        I_out = np.log(np.abs(
+        I_out = np.abs(
             crop2(
                 angularSpectrum(
                     U_in, wvl, d_in, d_out,z_list[iz]),
-                pad_factor=pf)))
+                pad_factor=pf))**2
 
         plt.imshow(I_out, vmin=-np.log(2),vmax=np.log(2))
-        plt.title('log amplitude')
+        plt.title('intensity')
         plt.colorbar()
         plt.show()
 
@@ -846,14 +850,14 @@ def scintillation_size(N, r, d_in, L0, l0, wvl, d_out, z_list, pf):
     FWHM_cov_I = FWHM_cov_I*d_out
     
     
-    expected_FWHM = (np.sqrt(wvl*z_list)*0.8) # radius
+    expected_FWHM = (np.sqrt(wvl*z_list)*0.5) # radius
     # measure FWHM of cov I correctly
     # but spot diameter is approx double this
     # so this is actually radius of spot
     plt.plot(z_list, FWHM_cov_I,
                  label='Measured FWHM of cov(log amplitude)',
                  marker='o', color='r', ls='')
-    plt.plot(z_list, expected_FWHM, label='0.8 of 1st Fresnel zone radius',
+    plt.plot(z_list, expected_FWHM, label='0.5 of 1st Fresnel zone radius',
               ls='--', color='g')
     plt.plot(z_list, (np.sqrt(wvl*z_list)), label='1st Fresnel zone radius',
              ls='--', color='k')
@@ -1047,25 +1051,14 @@ def diagonal_stack(A):
     #
     # Get error of the mean #
     #
-    for i in np.arange(N):
-        # Find error2 of the mean
-        # Above the centre
-        error_stack_A[N - 1 - i
-                      : N - 1] = (error_stack_A[N - 1 - i : N - 1]
-                                  + (A[: i, i]
-                                     - stack_A[N - 1 - i : N - 1])**2)
-        # Below the centre
-        error_stack_A[N - 1
-                      : 2*N - 1 - i] = (error_stack_A[N - 1 : 2*N - 1 - i]
-                                        + (A[i :, i]
-                                           - stack_A[N - 1 : 2*N - 1 - i])**2)
+    #error of the mean = mean / sqrt(N)
     for i in np.arange(N - 2) + 2: # excluding n=1 and an odd edge
         # Average error2 of the mean
-        error_stack_A[i] = error_stack_A[i]/(i)
-        error_stack_A[2*N - i - 1] = error_stack_A[2*N - i - 1]/(i)
+        error_stack_A[i] = stack_A[i]/np.sqrt(i)
+        error_stack_A[2*N - i - 1] = stack_A[2*N - i - 1]/np.sqrt(i)
     # error_stack_A[-2] = error_stack_A[-2]/1. # the odd edge
     # Get error of the mean
-    error_stack_A = np.sqrt(error_stack_A)
+    error_stack_A = np.abs(error_stack_A)
     error_stack_A[0] = np.NaN # the n=1 get np.NaN
     error_stack_A[-1] = np.NaN
 
@@ -2249,6 +2242,505 @@ def perfect_size_free(delta, z, wvl):
 
     return N
 
+###############################################################################
+########################################################################
+
+def get_propagation_parameters(D, delta, wvl, turbulenceHeights, FoV, r0,
+                               turbulenceStrengths):
+    
+    ARCSEC2RAD = 2.*np.pi/3600./360.
+    
+    
+    # h = 5000
+    # # Hmin = 30000
+    # # H = h*(2**np.ceil(np.log(Hmin/h)/np.log(2)) - 1)
+    # H = 30000
+    # lenslet_pixel = 16
+    # r0 = 0.05
+    # d = r0
+    # D = d/h*H
+    # delta = d/lenslet_pixel
+    # wvl = 500e-9
+    # turbulenceHeights = np.arange(int(np.ceil(H/h)) + 1)*h
+    # FoV = wvl/2./d/ARCSEC2RAD*lenslet_pixel
+    # # separation = d/h/ARCSEC2RAD
+    
+    # turbulenceStrengths = 1/2**(np.arange(int(np.ceil(H/h)) + 1)*h/5000)
+    # turbulenceStrengths[-1] = (2 - turbulenceStrengths[:-1].sum()*h/5000)
+    # temp = np.flip(np.sort(turbulenceStrengths))
+    # turbulenceStrengths[-1] = temp[1]
+    # turbulenceStrengths[1] = temp[-1]
+    # np.random.shuffle(turbulenceStrengths[1:-1])
+    # turbulenceStrengths /= turbulenceStrengths.sum()
+    
+    
+    
+    TURBULENCESPREAD = 2
+    turbulenceStrengths /= turbulenceStrengths.sum()
+    distributedr0 = (turbulenceStrengths*r0**(-5./3.))**(-3./5.)
+    
+    alpha_max_list = np.zeros(turbulenceHeights.shape[0])
+    alpha_max_list[0] = FoV/2.*ARCSEC2RAD
+    for i in (np.arange(alpha_max_list.shape[0] - 1) + 1):
+        alpha_max_list[i] = alpha_max_list[i - 1] + TURBULENCESPREAD/2.*wvl/distributedr0[i]
+    
+    # alpha_max_list = np.zeros(turbulenceHeights.shape[0])
+    # #alpha_max_list[0] = FoV/2.*ARCSEC2RAD
+    # for i in (np.arange(alpha_max_list.shape[0] - 1) + 1):
+    #     alpha_max_list[i] = wvl/2./delta#alpha_max_list[i - 1] + TURBULENCESPREAD/2.*wvl/distributedr0[i]
+    
+    Ds = np.zeros(turbulenceHeights.shape[0])
+    Ds[0] = D
+    for i in (np.arange(turbulenceHeights.shape[0] - 1) + 1):
+        Ds[i] = Ds[i - 1] + 2.*alpha_max_list[i]*(turbulenceHeights[i] - turbulenceHeights[i - 1])
+    
+    D1s = Ds[1:]
+    D2s = Ds[:-1]
+    Ns = 2**np.array(np.ceil(np.log(D1s/delta)/np.log(2)), dtype=int)
+    
+    suggestZList = np.zeros(turbulenceHeights.shape[0] - 1)
+    suggestZList = np.min([(Ns*delta - D1s/2. - D2s/2.)/(alpha_max_list[1:]),
+                           Ns/(wvl/delta**2)], axis=0)
+    # print(suggestZList)
+    partialPropSteps = np.array(np.ceil((turbulenceHeights[1:] - turbulenceHeights[:-1])/suggestZList), dtype=int)
+    
+    return D1s, D2s, Ns, partialPropSteps, alpha_max_list[1:]
+    
+def check_propagation_parameters(D1, D2, delta, wvl, N, propagation_distance, partialPropStep, alpha_max):
+    
+    # ARCSEC2RAD = 2.*np.pi/3600./360.
+    # h = 5000
+    # # Hmin = 30000
+    # # H = h*(2**np.ceil(np.log(Hmin/h)/np.log(2)) - 1)
+    # H = 30000
+    # lenslet_pixel = 16
+    # r0 = 0.05
+    # d = r0
+    # D = d/h*H
+    # delta = d/lenslet_pixel
+    # wvl = 500e-9
+    # turbulenceHeights = np.arange(int(np.ceil(H/h)) + 1)*h
+    # FoV = wvl/2./d/ARCSEC2RAD*lenslet_pixel
+    # # separation = d/h/ARCSEC2RAD
+    
+    # turbulenceStrengths = 1/2**(np.arange(int(np.ceil(H/h)) + 1)*h/5000)
+    # turbulenceStrengths[-1] = (2 - turbulenceStrengths[:-1].sum()*h/5000)
+    # temp = np.flip(np.sort(turbulenceStrengths))
+    # turbulenceStrengths[-1] = temp[1]
+    # turbulenceStrengths[1] = temp[-1]
+    # np.random.shuffle(turbulenceStrengths[1:-1])
+    # turbulenceStrengths /= turbulenceStrengths.sum()
+    
+    # D1s, D2s, Ns, partialPropSteps, alpha_max_list = get_propagation_parameters(
+    #     D, delta, wvl, turbulenceHeights, FoV, r0, turbulenceStrengths)
+    
+    # D1 = D1s[0]
+    # D2 = D2s[0]
+    # N = Ns[0]
+    # propagation_distance = turbulenceHeights[1] - turbulenceHeights[0]
+    # partialPropStep = partialPropSteps[0]
+    # alpha_max = alpha_max_list[0 + 1]
+    
+    
+    
+    pixel1 = D1/delta
+    enough_pixel_in = ((N >= pixel1) or np.isclose(N, pixel1, rtol=1e-2))
+    if enough_pixel_in == False:
+        print('not enough pixel for D1')
+    
+    pixel2 = D2/delta
+    enough_pixel_out = ((N >= pixel2) or np.isclose(N, pixel2, rtol=1e-2))
+    if enough_pixel_out == False:
+        print('not enough pixel for D2')
+    
+    input_require = D2 + 2.*alpha_max*propagation_distance
+    enough_input = ((D1 >= input_require) or np.isclose(D1, input_require, rtol=1e-2))
+    if enough_input == False:
+        print('not enough D1 to illuminate D2')
+    
+    alpha_max_grid = wvl/2./delta
+    enough_alpha_space = ((alpha_max <= alpha_max_grid) or np.isclose(alpha_max, alpha_max_grid, rtol=1e-2))
+    if enough_alpha_space == False:
+        print('delta not small enough to support large alpha_max')
+    
+    wrapping = alpha_max*(propagation_distance/partialPropStep)
+    occupied = D1/2. + D2/2.
+    available = N*delta
+    no_wrap = ((available >= wrapping + occupied) or np.isclose(available, wrapping + occupied, rtol=1e-2))
+    if no_wrap == False:
+        print('stray light loop around to the other side of output')
+    
+    max_optical_transfer = wvl*(propagation_distance/partialPropStep)/delta**2
+    no_aliasing_in_optical_transfer_function = ((N >= max_optical_transfer)
+                                                or np.isclose(N, max_optical_transfer, rtol=1e-2))
+    if no_aliasing_in_optical_transfer_function == False:
+        print('not enough N there is aliasing in optical transfer function')
+    
+    
+    PASS = (enough_pixel_in
+            and enough_pixel_out
+            and enough_input
+            and enough_alpha_space
+            and no_wrap
+            and no_aliasing_in_optical_transfer_function)
+    
+    return PASS
+    
+def rytov_approximation_scintillation_index(wvl, HAr0, z_list):
+    
+    k = 2.*np.pi/wvl                    # float; rad/m; Wave number.
+    cn2dz=HAr0**(-5./3.)/0.423/k**2        # float; Turbulence strength.
+    variance_theory_approx = 0.563 * k**(7./6.) * cn2dz * z_list**(5./6.)
+    
+    return variance_theory_approx
+
+def screensForTestPropLimitedAlpha1Layer(wvl,z_list,r0HA,N,delta,FoV):
+    
+    # wvl = 500e-9
+    # zmin = 1e3
+    # zmax = 50e3
+    # num = 10
+    # r0HA = 0.05
+    # N = 128
+    # delta = r0HA/16
+    # FoV = 16.*wvl/2./r0HA*206265
+    # z_list = np.append(0,np.logspace(np.log10(zmin), np.log10(zmax), num=num, base=10))
+    # z_list = np.flip(zmax - z_list)
+    # z_list[0] = 0
+    
+    distribution = np.zeros_like(z_list)
+    distribution[-1] = 1
+    
+    D1s, D2s, Ns, partialPropSteps, alpha_max_list = get_propagation_parameters(N*delta,
+                               delta, wvl, z_list, FoV, r0HA, distribution)
+    
+    # if (D1s/delta > 2048).sum() > 0 :
+    #     print('please reconsider')
+    #     return None
+    
+    print(D1s, D1s/delta, D2s, D2s/delta, delta, wvl, Ns, z_list, partialPropSteps, alpha_max_list)
+    
+    for i in np.arange(D1s.shape[0]):
+        cond = check_propagation_parameters(D1s[i], D2s[i], delta, wvl, Ns[i],
+                                     z_list[i + 1] - z_list[i],
+                                     partialPropSteps[i], alpha_max_list[i])
+        if cond == False:
+            print('bad propagation')
+            # return None
+    
+    initial_phase_screen = PhaseScreenKolmogorov(int(2*np.ceil(D1s[-1]/2./delta)),
+                                                 delta, r0HA, D1s[-1]/2)
+    for row in np.arange(initial_phase_screen.scrn.shape[0]):
+        initial_phase_screen.add_row()
+    # phase0 = initial_phase_screen.scrn - initial_phase_screen.scrn.mean()
+    # plt.imshow(phase0)
+    # plt.colorbar()
+    # plt.show()
+    
+    screens_list = np.zeros((z_list.shape[0],N,N), dtype=complex)
+    
+    current_size = initial_phase_screen.scrn.shape[0]
+    screens_list[0] = np.exp(1j*initial_phase_screen.scrn[(current_size - N)//2
+                                                          : (current_size + N)//2,
+                                                          (current_size - N)//2
+                                                          : (current_size + N)//2])
+    
+    inputScreen = np.pad(np.exp(1j*initial_phase_screen.scrn),
+                         (((Ns[-1] - current_size)//2,
+                           (Ns[-1] - current_size)//2),
+                          ((Ns[-1] - current_size)//2,
+                            (Ns[-1] - current_size)//2)),
+                         mode='constant', constant_values=0)
+    for iprop in np.flip(np.arange(z_list.shape[0] - 1)):
+        PROPAGATOR = MPROP.ConsecutivePropSquare(wvl, delta, Ns[iprop],
+                                                  z_list[iprop + 1] - z_list[iprop],
+                                                  partialPropSteps[iprop],
+                                                  #wvl/2./delta)
+                                                  alpha_max_list[iprop])
+        
+        # plt.imshow(np.angle(inputScreen));plt.colorbar();plt.show()
+        # plt.imshow(np.log(np.abs(inputScreen)),vmin=-np.sqrt(0.6),vmax=np.sqrt(0.6));plt.colorbar();plt.show()
+    
+        outputScreen = PROPAGATOR.prop(inputScreen)
+        
+        # plt.imshow(np.angle(outputScreen));plt.colorbar();plt.show()
+        # plt.imshow(np.log(np.abs(outputScreen)),vmin=-np.sqrt(0.6),vmax=np.sqrt(0.6));plt.colorbar();plt.show()
+    
+        screens_list[z_list.shape[0] - 1 - iprop] = outputScreen[(Ns[iprop] - N)//2
+                                                                 : (Ns[iprop] + N)//2,
+                                                                 (Ns[iprop] - N)//2
+                                                                 : (Ns[iprop] + N)//2]
+        inputScreen = outputScreen[(Ns[iprop] - Ns[iprop - 1])//2
+                                   : (Ns[iprop] + Ns[iprop - 1])//2,
+                                   (Ns[iprop] - Ns[iprop - 1])//2
+                                   : (Ns[iprop] + Ns[iprop - 1])//2]
+        
+    # for i in np.arange(screens_list.shape[0]):
+    #     plt.imshow(np.angle(screens_list[i]));plt.colorbar();plt.show()
+    #     plt.imshow(np.log(np.abs(screens_list[i])),vmin=-np.sqrt(0.6),vmax=np.sqrt(0.6));plt.colorbar();plt.show()
+    
+    return screens_list
+
+def testPropLimitedAlpha1Layer(wvl,real_z_list,r0HA,N,delta,FoV,new=True):
+    if new == True :
+        z_list_prop = np.append(0, real_z_list)
+        z_list_prop = np.flip(real_z_list.max() - z_list_prop)
+        z_list_prop[0] = 0
+        screens_list = screensForTestPropLimitedAlpha1Layer(wvl,z_list_prop,r0HA,N,delta,FoV)
+        testPropLimitedAlphaScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,FoV)
+        testPropLimitedAlphaBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,FoV)
+        name = 'propagation_sample_1HA'
+        hdu = fits.PrimaryHDU(np.abs(screens_list))
+        hdul = fits.HDUList([hdu])
+        hdul.writeto(name + '.fits', overwrite=True)
+        hdul.close()
+    else:
+        name = 'propagation_sample_1HA'
+        hdulist = fits.open(name + '.fits')
+        hdu = hdulist[0]
+        screens_list = hdu.data
+        hdulist.close()
+        testPropLimitedAlphaScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,FoV)
+        testPropLimitedAlphaBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,FoV)
+    return
+    
+
+def testPropLimitedAlphaScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,FoV):
+    # wvl = 500e-9
+    # zmin = 1e3
+    # zmax = 100e3
+    # num = 10
+    # r0HA = 0.11
+    # N = 128
+    # delta = r0HA/16
+    # FoV = 16.*wvl/2./r0HA*206265
+    # real_z_list = np.logspace(np.log10(zmin), np.log10(zmax), num=num, base=10)
+    
+    # z_list_prop = np.append(0, real_z_list)
+    # z_list_prop = np.flip(zmax - z_list_prop)
+    # z_list_prop[0] = 0
+    # screens_list = screensForTestPropLimitedAlpha1Layer(wvl,z_list_prop,r0HA,N,delta,FoV)
+    
+    k = 2.*np.pi/wvl
+    cn2dz=r0HA**(-5./3.)/0.423/k**2
+    saturate_point = (0.6/(0.563 * k**(7./6.) * cn2dz))**(6./5.) # where rytov approx = 0.6
+    hard_scintillation_point = (0.35/(0.563 * k**(7./6.) * cn2dz))**(6./5.)
+    
+    logamp_variance_theory_approx = rytov_approximation_scintillation_index(wvl, r0HA, real_z_list)
+    logamp_variance = np.var(np.log(np.abs(screens_list)),axis=(-1,-2))
+    error_logamp_variance = 2.*logamp_variance/np.sqrt(2.*N - 2.)
+    
+    plt.errorbar(real_z_list,
+                 logamp_variance[1:],
+                 yerr=error_logamp_variance[1:],
+                 marker='o',ls='',capsize=5,label='Simulation', color='r')
+    plt.plot(real_z_list,logamp_variance_theory_approx,ls=':',marker='',
+             label='Rytov Approximation', color='g')
+    plt.hlines(0.6,real_z_list[0],real_z_list[-1],label='Saturation Level at Rytov#=0.6',
+                color='b', ls='--')
+    plt.vlines(saturate_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
+               label='full saturation, Rytov#=0.6',color='b')
+    plt.vlines(hard_scintillation_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
+               label='strong scintillation, Rytov#=0.35',color='c')
+    plt.legend()
+    plt.xlim(real_z_list.min()*0.9,real_z_list.max()*1.1)
+    plt.ylim(logamp_variance[1:].min()*0.9,logamp_variance[1:].max()*1.1)
+    plt.xlabel('Propagation distance (m)')
+    plt.ylabel('Variance of log-amplitude $\sigma^2_\chi$')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.show()
+    plt.savefig('test_rytov_index.png')
+    return
+    
+def testPropLimitedAlphaBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,FoV):
+    # wvl = 500e-9
+    # zmin = 1e3
+    # zmax = 100e3
+    # num = 10
+    # r0HA = 0.11
+    # N = 128
+    # delta = r0HA/16
+    # FoV = 16.*wvl/2./r0HA*206265
+    # real_z_list = np.logspace(np.log10(zmin), np.log10(zmax), num=num, base=10)
+    
+    # z_list_prop = np.append(0, real_z_list)
+    # z_list_prop = np.flip(zmax - z_list_prop)
+    # z_list_prop[0] = 0
+    # screens_list = screensForTestPropLimitedAlpha1Layer(wvl,z_list_prop,r0HA,N,delta,FoV)
+    
+    k = 2.*np.pi/wvl
+    cn2dz=r0HA**(-5./3.)/0.423/k**2
+    saturate_point = (0.6/(0.563 * k**(7./6.) * cn2dz))**(6./5.) # where rytov approx = 0.6
+    hard_scintillation_point = (0.35/(0.563 * k**(7./6.) * cn2dz))**(6./5.)
+    
+    FWHM_cov_I = get_blob_size(np.log(np.abs(screens_list[1:])))*delta
+    
+    # expected_FWHM = (np.sqrt(wvl*real_z_list)*0.8) # radius
+    # measure FWHM of cov I correctly
+    # but spot diameter is approx double this
+    # so this is actually radius of spot
+    plt.plot(real_z_list, FWHM_cov_I,
+                 label='Measured FWHM of cov(log amplitude)',
+                 marker='o', color='r', ls='')
+    plt.plot(real_z_list,
+                     (0.8*np.sqrt(wvl*real_z_list)),
+                     label='0.6 Fresnel zone radius',
+              ls='--', color='g', alpha=0.5) # from tartarskii fig 45 section 47 page 239
+                                    # eqn 33,34
+    plt.vlines(saturate_point,FWHM_cov_I.min(),FWHM_cov_I.max(),
+               label='full saturation, Rytov#=0.6',color='b')
+    plt.vlines(hard_scintillation_point,FWHM_cov_I.min(),FWHM_cov_I.max(),
+               label='strong scintillation, Rytov#=0.35',color='c')
+    
+    #plt.plot(z_list, wvl*z_list/2./r, label='r diffraction', color='y')
+    plt.hlines(2*delta, xmin=real_z_list.min(), xmax=real_z_list.max(),
+                ls='--', color='b', label='Nyquist sampling')
+    # if z_list.max() > (1./0.25 * 0.563 * k**(7./6.) * cn2dz)**(-6./5.):
+    #     plt.vlines((1./0.25 * 0.563 * k**(7./6.) * cn2dz)**(-6./5.),
+    #                ymin=FWHM_cov_I.min(),
+    #                ymax=FWHM_cov_I.max(),
+    #                label='weak <-> strong turbulence criterea',
+    #                color='m', ls='--')
+    # plt.ylim(1*d_out, fitr*d_out)
+    # plt.ylim(1*d_out, np.nanmax(FWHM_cov_I)*1.2)
+    # plt.title('FWHM of covariance of log amplitude, r={:.3f}m, 1px={:.3f}m'.format(
+    #     r,d_out))
+    # plt.ylim(np.max([0.9*FWHM_cov_I.min(),delta*2.]),1.1*FWHM_cov_I.max())
+    plt.xlim(real_z_list.min()*0.9,real_z_list.max()*1.1)
+    plt.ylim(FWHM_cov_I.min()*0.9,FWHM_cov_I.max()*1.1)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Propagation distance (m)')
+    plt.ylabel('FWHM (m)')
+    plt.legend()
+    plt.show()
+    plt.savefig('test_scintillation_blob_size.png')
+    return
+    
+    
+def get_blob_size(screens_list):
+    N = screens_list.shape[-1]
+    fitr = N//4
+    FWHM_cov_I = np.zeros(screens_list.shape[0], dtype=float)
+    
+    for iz in np.arange(screens_list.shape[0]):
+        cov = np.cov(screens_list[iz])
+        # cov /= np.max(cov,axis=0)
+        # plt.imshow(cov)
+        # plt.colorbar()
+        # plt.show()
+        stack_cov_I, error_stack_cov_I = diagonal_stack(cov)
+        stack_cov_I /= stack_cov_I.max()
+        error_stack_cov_I /= stack_cov_I.max()
+        # plt.plot(stack_cov_I)
+        # plt.show()
+        # a = np.nanmax(stack_cov_I)
+        # c = 0#a*0.0242#np.nanmedian(stack_cov_I)
+        
+        # param, cova = curve_fit(sinc_exp_decay,
+        #                         np.arange(-fitr, fitr),
+        #                         (stack_cov_I[N - 2 - fitr
+        #                                      : N - 2 + fitr] - c)/a,
+        #                         sigma=error_stack_cov_I[N - 2 - fitr
+        #                                                 : N - 2 + fitr])
+    
+        # if np.abs(param[0]) < 1000.0*np.abs(param[1]):
+        #     # For the case which the sinc still influences.
+        #     # It is hard to get an analytic answer for FWHM of decay sinc
+        #     # So we do numerical answer based on our glorious fit instead.
+        #     FWHM_cov_I[iz] = np.abs(2.*fsolve(
+        #         sinc_exp_decay_half, x0=np.array([0.0]),
+        #         args = (param[0], param[1])))
+        #     case = 'sinc_exp_decay'
+        # else:
+        #     # The fit is baaddd.
+        #     # Contribution of sinc is too small. We are better fit just exp
+        #     # Do a different fit!!!!
+        #     case = 'exp_decay'
+        #     # Get baseline
+        #     param, cova = curve_fit(exp_decay,
+        #                             np.arange(-fitr, fitr),
+        #                             (stack_cov_I[N - 2 - fitr
+        #                                          : N - 2 + fitr])/a,
+        #                             sigma=error_stack_cov_I[N - 2 - fitr
+        #                                                     : N - 2 + fitr])
+        #     c = param[1]
+        #     # Redo with a new baseline
+        #     param, cova = curve_fit(exp_decay,
+        #                             np.arange(-fitr, fitr),
+        #                             (stack_cov_I[N - 2 - fitr
+        #                                          : N - 2 + fitr]
+        #                              - a*c) / (a - a*c),
+        #                             sigma=error_stack_cov_I[N - 2 - fitr
+        #                                                     : N - 2 + fitr])
+        #     # Since we actually have a good analytic FWHM for exp
+        #     FWHM_cov_I[iz] = 2.0*0.693147*np.abs(param[0]) # d*2*ln2
+        
+        # # test out the fit in pixel!!!!
+        # plt.errorbar(np.arange(-fitr, fitr), stack_cov_I[N - 2 - fitr
+        #                                                   : N - 2 + fitr],
+        #               yerr=error_stack_cov_I[N - 2 - fitr
+        #                                       : N - 2 + fitr],
+        #               color='r', label='Measured', marker='.', ls='')
+    
+        # if case == 'sinc_exp_decay':
+        #     plt.plot(np.arange(-fitr, fitr),
+        #               sinc_exp_decay(np.arange(-fitr, fitr),
+        #                               param[0], param[1])*a + c,
+        #               color='b', label='Sinc exp decay fit', ls='-')
+        # if case == 'exp_decay':
+        #     plt.plot(np.arange(-fitr, fitr),
+        #               (exp_decay(np.arange(-fitr, fitr), param[0], param[1])
+        #                 *(a-a*c) + a*c),
+        #               color='b', label='Exp decay fit', ls='-')
+        # plt.hlines(a/2. + c, xmin=-fitr, xmax=fitr,
+        #             label='Half max', ls='--', color= 'g')
+        
+        stack_cov_I[stack_cov_I < 0] = 0
+        temp = scipy.signal.peak_widths(stack_cov_I[N - 2 - fitr : N - 2 + fitr],
+                                                  [fitr], rel_height=0.5)
+        
+        FWHM_cov_I[iz] = temp[0][0]
+        
+        # plt.plot(np.arange(-fitr, fitr),
+        #               stack_cov_I[N - 2 - fitr : N - 2 + fitr])#,
+        #               #yerr=error_stack_cov_I[N - 2 - fitr : N - 2 + fitr])
+        # plt.hlines([stack_cov_I.min().min(),stack_cov_I.max(),temp[1][0]],-fitr,fitr)
+        # plt.vlines([temp[2][0] - fitr,temp[3][0] - fitr],stack_cov_I.min(),stack_cov_I.max())
+        
+        # plt.legend()
+        # plt.xlim(-fitr, fitr)
+        # # plt.title('Covariance of pupil log amplitude at'
+        # #           + ' {:.0f}m, FWHM={:.0f}'.format(real_z_list[iz],FWHM_cov_I[iz]))
+        # plt.xlabel('pixel')
+        # plt.ylabel('Covariance')
+        # plt.show()
+    
+    return FWHM_cov_I
+    
+def testPropLimitedAlphaMultiLayer(wvl,z_list,r0,turbulenceStrengths,N,delta,FoV,new=True):
+    wvl = 0.5e-6
+    z_list = np.arange(7)*5e3
+    r0 = 0.05
+    N = 128
+    lenslet_pixel = 16
+    delta = 0.02/lenslet_pixel
+    FoV = wvl/2./(delta*lenslet_pixel)
+    
+    temp = np.flip(np.sort(turbulenceStrengths))
+    turbulenceStrengths[-1] = temp[1]
+    turbulenceStrengths[1] = temp[-1]
+    np.random.shuffle(turbulenceStrengths[1:-1])
+    turbulenceStrengths /= turbulenceStrengths.sum()
+    
+    D1s, D2s, Ns, partialPropSteps, alpha_max_list = \
+        get_propagation_parameters(N*delta, delta, wvl, z_list,
+                                   FoV, r0, turbulenceStrengths)
+    
+    
+    
+    
 ###############################################################################
 ########################################################################
 

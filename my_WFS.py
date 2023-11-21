@@ -92,6 +92,29 @@ import time
 color_map = plt.cm.get_cmap('viridis')
 reversed_color_map = color_map.reversed()
 
+def rebin(arr, new_shape):
+    """
+    Direct copy from the following source.
+    
+    https://scipython.com/blog/binning-a-2d-array-in-numpy/
+
+    Parameters
+    ----------
+    arr : TYPE
+        DESCRIPTION.
+    new_shape : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+    shape = (new_shape[0], arr.shape[0] // new_shape[0],
+             new_shape[1], arr.shape[1] // new_shape[1])
+    return arr.reshape(shape).mean(-1).mean(1)
+
 ###############################################################################
 ########################################################################
 
