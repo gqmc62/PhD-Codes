@@ -167,12 +167,14 @@ class ConsecutivePropSquare():
            0000
     """
 
-    def __init__(self, wvl, delta, N, Z, nprop, alpha_max):
+    def __init__(self, wvl, delta, N, Z, nprop, alpha_max=None):
         """
         First initialization.
         
         N is the padded size.
         """
+        if alpha_max == None:
+            alpha_max = wvl/2/delta
         self.alpha_max = float(alpha_max)
         self.N = int(N)
         self.F_in = pyfftw.empty_aligned((self.N, self.N), dtype=complex)
@@ -508,29 +510,26 @@ class BlindOneAngularPropAtm():
         self.delta = float(delta)
         self.N = int(N)
         self.Z = float(Z)
-        self.pad_factor = int(2)
-        self.NN = self.pad_factor*self.N
+        self.N
         if self.Z == 0:
             return
 
-        self.F_in = pyfftw.empty_aligned((self.NN, self.NN), dtype=complex)
-        self.F_out = pyfftw.empty_aligned((self.NN, self.NN), dtype=complex)
+        self.F_in = pyfftw.empty_aligned((self.N, self.N), dtype=complex)
+        self.F_out = pyfftw.empty_aligned((self.N, self.N), dtype=complex)
         self.FF_FORWARD = pyfftw.FFTW(
             self.F_in, self.F_out,axes=(-1, -2), direction='FFTW_FORWARD')
         self.FF_BACKWARD = pyfftw.FFTW(
             self.F_in, self.F_out, axes=(-1, -2), direction='FFTW_BACKWARD')
         (nx, ny) = np.meshgrid(
-            np.arange(-self.NN/2, self.NN/2),
-            np.arange(-self.NN/2, self.NN/2))
+            np.arange(-self.N/2, self.N/2),
+            np.arange(-self.N/2, self.N/2))
         nsq = nx**2 + ny**2
-        self.df = 1. / (self.NN*self.delta)
+        self.df = 1. / (self.N*self.delta)
         self.fsq = nsq*self.df**2
         del nsq, nx, ny
         
         self.Q2 = np.exp(-1j*(np.pi**2*2*self.Z/self.wavenumber) * self.fsq)
         
-        self.a = int(self.N/2)
-        self.b = int(3*self.N/2)
 
     def prop(self, U_in):
         """Prop."""
@@ -541,16 +540,13 @@ class BlindOneAngularPropAtm():
             self.FF_BACKWARD(
                 np.fft.ifftshift(
                     self.Q2 * np.fft.fftshift(
-                        self.FF_FORWARD(
-                            np.pad(U_in,
-                             (self.a, self.a), 'constant', constant_values=0.)
-                            )
+                        self.FF_FORWARD(U_in)
                         , axes=(-1,-2))
                     , axes=(-1,-2))
                 )
             
 
-        return U_out[self.a : self.b, self.a : self.b]
+        return U_out
 
 class OneAngularPropTele():
     """

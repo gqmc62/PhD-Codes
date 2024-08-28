@@ -66,7 +66,7 @@ reversed_color_map = color_map.reversed()
 # 1) Power spectrum density. #
 def psd_function(r0, N, delta, L0, l0):
     """
-    Create 2D power spectrum density (PSD).
+    Create 2D power spectrum density (PSD) of phase.
 
     It is derived almost exactly from within ft_phase_screen in
     aotools/turbulence/phasescreen.py which, in turn, based on
@@ -992,9 +992,9 @@ def zernike_modes_strength(r0, N, delta, L0, l0, n_modes, n_random,
     return x, theory, coefficients_variance, coefficients_variance_error
 
 def noll_variance(n_modes,N,delta,r0):
-    A = np.array([0.4479, 0.4480, 0.0230, 0.0230, 0.0232,
-                  0.0061, 0.0062, 0.0062, 0.0062, 0.0024,
-                  0.0025, 0.0024, 0.0024, 0.0025, 0.0012,
+    A = np.array([0.4480, 0.4480, 0.0230, 0.0230, 0.0230,
+                  0.0062, 0.0062, 0.0062, 0.0062, 0.0025,
+                  0.0025, 0.0025, 0.0025, 0.0025, 0.0012,
                   0.0012, 0.0012, 0.0012, 0.0012, 0.0012])
     if n_modes <= 20:
         theory = A[0 : n_modes]
@@ -1005,6 +1005,26 @@ def noll_variance(n_modes,N,delta,r0):
         theory = np.append(A,B)
     theory = theory * (N*delta/r0)**(5./3.)
     return theory
+
+def von_Karman_noll_variance(n_modes,N,delta,r0,L0):
+    A = np.array([0.4480, 0.4480, 0.0230, 0.0230, 0.0230,
+                  0.0062, 0.0062, 0.0062, 0.0062, 0.0025,
+                  0.0025, 0.0025, 0.0025, 0.0025, 0.0012,
+                  0.0012, 0.0012, 0.0012, 0.0012, 0.0012])
+    if n_modes <= 20:
+        theory = A[0 : n_modes]
+    if n_modes > 20:
+        excess = np.arange(20, n_modes) + 1
+        B = 0.2944 * ((excess)**(-np.sqrt(3)/2.) 
+                      - (excess + 1)**(-np.sqrt(3)/2.))
+        theory = np.append(A,B)
+    theory = theory * (N*delta/r0)**(5./3.)
+    e = N*delta/L0
+    adjust = (1 - 1.42*e**(1./3.) + 3.70*e**2 - 4.01*e**(7./3.) + 4.21*e**4 - 4.00*e**(13./3.))
+    print(adjust)
+    theory[:2] *= adjust
+    return theory
+
 
 def get_PSD(phase, delta):
     """
@@ -1024,6 +1044,7 @@ def get_PSD(phase, delta):
     PSD : numpy.ndarray
           (N,N)
           Power Spectral Density.
+          unit: (unit of phase * unit of delta)**2 for 2d
 
     Example
     -------
@@ -1072,16 +1093,58 @@ def get_PSD(phase, delta):
     plt.show()
 
     """
+    dim = phase.ndim
+    if dim == 2:
+        N = len(phase)
+        del_f = 1./(N*2.*delta)
+        phase = phase - phase.mean()
+        cn = my_ft2(mirror_pad2(phase), 1./N/2.)
+        PSD = (np.abs(cn)**2/del_f**2)*2.   # * 2. is from the fact that
+                                            # the input phase is not complex
+                                            # phase are complex when generated
+                                            # from cn.
+        PSD[int(N/2),int(N/2)] = 0.         # PSD is 0 at the centre.
+        return pick_even_index(PSD)/4
+    
+    if dim == 1:
+        N = len(phase)
+        del_f = 1/(N*2.*delta)
+        phase = phase - phase.mean()
+        cn = np.fft.ifftshift(np.fft.fft(np.pad(phase,(N//2,N//2),'symmetric')))*1./N/2.
+        PSD = (np.abs(cn)**2/del_f)
+        PSD[int(N/2)] = 0.
+        return PSD[::2]/2
+
+def perfect_dm(phase,delta,dm_pitch):
+    N = phase.shape[0]
+    PHASE = np.pad(phase,(N//2,N//2),'symmetric')
+    NN = N*2
+    del_f = 1./(2.*NN*delta)
+    spatial_frequency = np.fft.fftshift(np.fft.fft2(PHASE))
+    f = (np.arange(NN) - NN/2)*del_f
+    fy, fx = np.meshgrid(f,f)
+    FILTER = ((np.abs(fx) < 1./2./dm_pitch) * (np.abs(fy) < 1./2./dm_pitch))
+    DM_PHASE = (np.fft.ifft2(np.fft.fftshift(spatial_frequency * FILTER)).real)[N//2:3*N//2,N//2:3*N//2]
+    return DM_PHASE
+
+def get_PSD_rolling(phase, delta):
     N = len(phase)
-    del_f = 1./(N*2.*delta)
-    phase = phase - phase.mean()
-    cn = my_ft2(mirror_pad2(phase), 1./N/2.)
-    PSD = (np.abs(cn)**2/del_f**2)*2.   # * 2. is from the fact that
-                                        # the input phase is not complex
-                                        # phase are complex when generated
-                                        # from cn.
-    PSD[int(N/2),int(N/2)] = 0.         # PSD is 0 at the centre.
-    return pick_even_index(PSD)/4
+    PSD = np.zeros((N,N),dtype=float)
+    del_f = 1/(N*2.*delta)
+    for i in np.arange(N):
+        phase[i] = phase[i] - phase[i].mean()
+        cn = np.fft.ifftshift(np.fft.fft(np.pad(phase[i],(N//2,N//2),'symmetric')))*1./N/2.
+        PSD[i] = (np.abs(cn)**2/del_f)
+        
+    PSD[:,int(N/2)] = 0.
+    PSD[:] += PSD[:,::-1]
+    PSD /= 2.
+    
+    reporting_PSD = (PSD[:,::2]/2)[:,N//2+1:]
+    mean = np.mean(reporting_PSD,axis=0)
+    error = np.std(mean,axis=0)/np.sqrt(N)
+    
+    return mean, error
 
 def my_ft2(g, delta):
     """
@@ -1350,24 +1413,48 @@ def get_structure_function(phase):
     # structure_function = (structure_function_x + structure_function_y)/2
     # return structure_function
     
-    N = phase.shape[0]
-    structure_function_x = np.zeros((N), dtype=float)
-    structure_function_y = np.zeros((N), dtype=float)
+    if phase.ndim == 2:
+        N = phase.shape[0]
+        structure_function_x = np.zeros((N), dtype=float)
+        structure_function_y = np.zeros((N), dtype=float)
+        
+        for separation_x in np.arange(structure_function_x.shape[0] - 1) + 1:
+            xo = 0
+            xi = xo + separation_x
+            for y in np.arange(N):
+                structure_function_x[separation_x] += (phase[xo, y] - phase[xi, y])**2
+            structure_function_x[separation_x] /= N
+        for separation_y in np.arange(structure_function_y.shape[0] - 1) + 1:
+            yo = 0
+            yi = yo + separation_y
+            for x in np.arange(N):
+                structure_function_y[separation_y] += (phase[x, yo] - phase[x, yi])**2
+            structure_function_y[separation_y] /= N
+        structure_function = (structure_function_x + structure_function_y)/2
+        return structure_function
     
-    for separation_x in np.arange(structure_function_x.shape[0] - 1) + 1:
-        xo = 0
-        xi = xo + separation_x
-        for y in np.arange(N):
-            structure_function_x[separation_x] += (phase[xo, y] - phase[xi, y])**2
-        structure_function_x[separation_x] /= N
-    for separation_y in np.arange(structure_function_y.shape[0] - 1) + 1:
-        yo = 0
-        yi = yo + separation_y
-        for x in np.arange(N):
-            structure_function_y[separation_y] += (phase[x, yo] - phase[x, yi])**2
-        structure_function_y[separation_y] /= N
-    structure_function = (structure_function_x + structure_function_y)/2
-    return structure_function
+    if phase.ndim == 1:
+        structure_function_x = (phase[0] - phase)**2
+        return structure_function
+
+def get_structure_function_ft(phase):
+    #from schmidt 2009 pg48
+    P = np.fft.fft2(phase)
+    S = np.fft.fft2(phase**2)
+    D = np.fft.fftshift(2*np.fft.ifft2(S.real - np.abs(P)**2))
+    return D
+
+def get_structure_function_rolling(phase):
+    N = int(phase.shape[0]//2)
+    structure_function_all = np.zeros((2*N,N), dtype=float)
+    for i in np.arange(2*N):
+        structure_function_all[i,:] =  ((np.roll(phase[i,:],(-i)) - phase[i,i])**2)[:N]
+        
+    var = np.var(structure_function_all,axis=(0))
+    mean = np.mean(structure_function_all,axis=(0))
+    var_of_mean = var/structure_function_all.shape[0]
+        
+    return mean, np.sqrt(var_of_mean)
 
 # def get_structure_function(phase):
 #     """
@@ -1739,10 +1826,10 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
                 + '.png')
     plt.show()
     
-    mean_PSD_x = (np.mean(PSD, axis=0).T)[int(N/2),int(N/2 + 1) : ]
-    error_mean_PSD_x = ((np.std(PSD, axis=0, ddof=1)/np.sqrt(RANDOM)).T)[int(N/2),int(N/2 + 1) : ]
-    mean_PSD_y = (np.mean(PSD, axis=0))[int(N/2),int(N/2 + 1) : ]
-    error_mean_PSD_y = ((np.std(PSD, axis=0, ddof=1)/np.sqrt(RANDOM)))[int(N/2),int(N/2 + 1) : ]
+    mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
+    error_mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
+    mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
+    error_mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
     theoretical_PSD = psd_function(r0, N, pixel_scale, L0, l0)[int(N/2),int(N/2 + 1) : ]
     kolmogorov_PSD = kolmogorov_psd_function(r0, N, pixel_scale)[int(N/2),int(N/2 + 1) : ]
     f = (np.arange(N/2-1) + 1)/N/pixel_scale
@@ -1924,10 +2011,10 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
                 + '.png')
     plt.show()
     
-    mean_PSD_x = (np.mean(PSD, axis=0).T)[int(N/2),int(N/2 + 1) : ]
-    error_mean_PSD_x = ((np.std(PSD, axis=0, ddof=1)/np.sqrt(RANDOM)).T)[int(N/2),int(N/2 + 1) : ]
-    mean_PSD_y = (np.mean(PSD, axis=0))[int(N/2),int(N/2 + 1) : ]
-    error_mean_PSD_y = ((np.std(PSD, axis=0, ddof=1)/np.sqrt(RANDOM)))[int(N/2),int(N/2 + 1) : ]
+    mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
+    error_mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
+    mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
+    error_mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
     theoretical_PSD = psd_function(r0, N, pixel_scale, L0, l0)[int(N/2),int(N/2 + 1) : ]
     kolmogorov_PSD = kolmogorov_psd_function(r0, N, pixel_scale)[int(N/2),int(N/2 + 1) : ]
     f = (np.arange(N/2-1) + 1)/N/pixel_scale

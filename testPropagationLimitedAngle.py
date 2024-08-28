@@ -15,7 +15,7 @@ from matplotlib import colors
 
 N = 1024
 wvl = 500e-9
-r0HA = 0.14#0.05#0.14
+r0HA = 0.05#0.05#0.14
 d = 0.05
 lenslet_pixel = 16
 delta = d/lenslet_pixel
@@ -31,9 +31,12 @@ hard_scintillation_point = (0.35/(0.563 * k**(7./6.) * cn2dz))**(6./5.)
 # if too low prop distance, either cannot detect blob size,
 # or light could not yet interact with neighboring pixels...
 #              detectable fresnel zone   allowed angle
-zmin = np.max([(2.*delta/0.6)**2/wvl,(delta/((FoV/2.)*ARCSEC2RAD)),(1e-3/((FoV/2.)*ARCSEC2RAD))]) # expected minimum zone size to be more than 2 pixel...
+zmin = np.max([(2.*delta/0.6)**2/wvl,(delta/((FoV/2.)*ARCSEC2RAD)),
+               (1e-3/((FoV/2.)*ARCSEC2RAD))]) 
+# expected minimum zone size to be more than 2 pixel...
+
 #       saturate               no more data                freznel zone larger than the screen
-zmax = np.min([saturate_point,(N*delta)/(wvl/2./(N*delta)),(2.*delta*N/0.6)**2/wvl])
+zmax = np.min([saturate_point,(N*delta)/(wvl/2./(N*delta)),(2.*delta*N/0.6)**2/wvl,30000])
 
 
 # delta = r0HA/16
