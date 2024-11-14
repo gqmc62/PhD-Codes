@@ -19,7 +19,7 @@ X 1.5 we get the photon noise we want
 ########################################################################
 
 import os
-import soapy
+from soapy import soapy
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
@@ -341,7 +341,7 @@ sim.aoinit()
 # sim.makeIMat()
 # sim.config.calcParams()
 N = sim.wfss[0].n_subaps
-sim.config.sim.nIters = 1000
+sim.config.sim.nIters = 100
 TIME = sim.config.sim.nIters
 
 position = np.asarray(sim.wfss[0].pupil_subap_coords/sim.wfss[0].nx_subap_pixels,dtype=int) - 1

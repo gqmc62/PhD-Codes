@@ -1736,6 +1736,11 @@ def KolmogorovStructureFunction(r0,N,delta):
 ###############################################################################
 ########################################################################
 
+def tiptilt_variance_adjust_to_vK(D,L0):
+    e = D/L0
+    adjust = (1 - 1.42*e**(1./3.) + 3.70*e**2 - 4.01*e**(7./3.) + 4.21*e**4 - 4.00*e**(13./3.))
+    return adjust
+
 def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     
     n_modes = 20 + 1

@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from aotools.turbulence import infinitephasescreen
 import my_WFSC as MWFS
 from tqdm import tqdm
-from MyScreen import MyPhaseScreen
+# from MyScreen import MyPhaseScreen
 
 def deming(x,y):
     """
@@ -40,8 +40,8 @@ def deming(x,y):
     b0 = yb - b1*xb
     return b0, b1
 
-REPEAT1 = 100
-REPEAT2 = 1000
+REPEAT1 = 10
+REPEAT2 = 100
 wvl = 500e-9
 N_original = int(64)
 L0_original = float(20)
