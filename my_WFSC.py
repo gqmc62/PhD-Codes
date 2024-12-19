@@ -11,7 +11,7 @@ Created on Wed Mar 15 16:20:07 2023
 import numpy as np
 from aotools.functions.zernike import zernikeArray
 import pyfftw
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 class IgTilt():
     """Ig tilt."""
@@ -42,10 +42,10 @@ class IgTilt():
         self.gy[self.gy >  np.pi] = self.gy[self.gy >  np.pi] - 2*np.pi
         self.gy[self.gy < -np.pi] = self.gy[self.gy < -np.pi] + 2*np.pi
 
-        Ig0 = (self.gx * self.Ix).sum()/((self.Ix).sum())
-        Ig1 = (self.gy * self.Iy).sum()/((self.Iy).sum())
+        Ig0 = np.sum(self.gx * self.Ix)/self.Ix.sum()
+        Ig1 = np.sum(self.gy * self.Iy)/self.Iy.sum()
 
-        return np.array([Ig0, Ig1])*U.shape[0]
+        return np.asarray([Ig0, Ig1])*U.shape[0]
 
     def measure_with_noise(self, U, Nphot):
         """Measure tilt in rad/lenslet."""
@@ -66,36 +66,137 @@ class IgTilt():
         self.gy[self.gy >  np.pi] = self.gy[self.gy >  np.pi] - 2*np.pi
         self.gy[self.gy < -np.pi] = self.gy[self.gy < -np.pi] + 2*np.pi
 
-        Ig0 = (self.gx * self.Ix).sum()/((self.Ix).sum())
-        Ig1 = (self.gy * self.Iy).sum()/((self.Iy).sum())
+        Ig0 = np.sum(self.gx * self.Ix)/self.Ix.sum()
+        Ig1 = np.sum(self.gy * self.Iy)/self.Iy.sum()
         
         # plt.imshow(self.I)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([Ig0, Ig1]) * U.shape[0]
+        return np.asarray([Ig0, Ig1]) * U.shape[0]
 
-    def measure_from_phase_I(self, phase, I):
-        """Measure tilt in rad/lenslet."""
-        self.phase = phase
-        self.I = I*self.pupil
-        I_sum = (self.I).sum()
+class Focus():
+    """
+    turn complex amplitude at the pupil plane into intensity profile at the focal plane
+    """
+    def __init__(self, N):
+        """N is for the no zero-padded data."""
+        self.N = N
+        self.a = int(self.N/2)
+        self.b = int(3*self.N/2)
+        self.U = np.zeros((self.N, self.N), dtype=complex)
+
+        self.F0 = pyfftw.empty_aligned((2*self.N, 2*self.N), dtype=complex)
+        self.F1 = pyfftw.empty_aligned((2*self.N, 2*self.N), dtype=complex)
+        self.FF01 = pyfftw.FFTW(self.F0, self.F1, axes=(-1,-2), direction='FFTW_FORWARD')
+
+        (y1, x1) = np.meshgrid(np.arange(-self.N/2, self.N/2),
+                               np.arange(-self.N/2, self.N/2))
+        self.Q = np.exp(-1j*(x1 + y1)*np.pi/(2*self.N))
+
+        self.Im = np.zeros((self.N, self.N), dtype=float)
+
+        (self.ywfs, self.xwfs) = np.meshgrid(np.arange(self.N) + 0.5 - self.N/2,
+                                   np.arange(self.N) + 0.5 - self.N/2)
+        self.pupil = zernikeArray(1, N)[0]
+
+        del x1, y1
+
+    def focus(self, U):
+        """Focus. return image normalized to total energy."""
+        self.Im = np.abs(np.fft.fftshift(
+            self.FF01(np.pad(U * self.Q * self.pupil,
+                             (self.a, self.a), 'constant', constant_values=0.))
+            )[self.a : self.b, self.a : self.b])**2
+        self.Im = self.Im/self.Im.sum()
+
+        return self.Im
+
+class SHWFS_from_image_adaptive_ROI():
+    """
+    Run one SHWFS measurement from image of SHWFS detector plane.
+    Receiving image of NxN but readout only nxn around the maximum point.
+    """
+    def __init__(self, N, NN):
+        """N is for the no zero-padded data."""
+        self.N = N # region of interest
+        self.NN = NN # whole input image
+        self.Im = np.zeros((self.N, self.N), dtype=float)
+        self.IM = np.zeros((self.NN, self.NN), dtype=float)
+
+        (self.ywfs, self.xwfs) = np.meshgrid(np.arange(self.N) + 0.5 - self.N/2,
+                                   np.arange(self.N) + 0.5 - self.N/2)
+
+    def measure_no_noise_no_threshold(self, IM):
+        self.IM = IM
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) !=1) or (len(MAX_LOC[1]) != 1):
+            print('doubly max')
+        MAX_LOC_X = MAX_LOC[0][0]
+        MAX_LOC_Y = MAX_LOC[1][0]
+
+        low_x = (MAX_LOC_X - self.N//2)
+        high_x = (MAX_LOC_X + self.N//2)
+        low_y = (MAX_LOC_Y - self.N//2)
+        high_y = (MAX_LOC_Y + self.N//2)
+
+        if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+            print('out of bound')
+
+        self.Im = self.IM[low_x:high_x,low_y:high_y]
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
         
-        self.gx = self.phase[1 : ,   : ] - self.phase[ : -1, :   ]
-        self.gy = self.phase[  : , 1 : ] - self.phase[ :   , : -1]
+        # plt.imshow(self.Im)
+        # plt.colorbar()
+        # plt.show()
+        # plt.clf()
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+    
+    def measure_with_noise_with_threshold(self, IM, Nphot, sigma_readout, MaxNormThreshold):
+        """Measure tilt. U must not be zero-padded. In number of photons."""
+        self.IM = IM
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) !=1) or (len(MAX_LOC[1]) != 1):
+            print('doubly max')
+        MAX_LOC_X = MAX_LOC[0][0]
+        MAX_LOC_Y = MAX_LOC[1][0]
+
+        low_x = (MAX_LOC_X - self.N//2)
+        high_x = (MAX_LOC_X + self.N//2)
+        low_y = (MAX_LOC_Y - self.N//2)
+        high_y = (MAX_LOC_Y + self.N//2)
+
+        if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+            print('out of bound')
+
+        self.Im = self.IM[low_x:high_x,low_y:high_y]
+
+
+        self.Im = self.Im * Nphot/self.Im.sum()
+        self.Im = (np.random.poisson(self.Im)
+                   + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
+
+        maxval = self.Im.max()
+        self.Im = self.Im - MaxNormThreshold*maxval
         
-        self.gx[self.gx >  np.pi] = self.gx[self.gx >  np.pi] - 2*np.pi
-        self.gx[self.gx < -np.pi] = self.gx[self.gx < -np.pi] + 2*np.pi
-        self.gy[self.gy >  np.pi] = self.gy[self.gy >  np.pi] - 2*np.pi
-        self.gy[self.gy < -np.pi] = self.gy[self.gy < -np.pi] + 2*np.pi
+        self.Im[self.Im < 0] = 0.
 
-        Ig0 = (self.gx
-               * (self.I[1 : ,   : ] + self.I[ : -1, :   ])/2).sum() / I_sum
-        Ig1 = (self.gy
-               * (self.I[  : , 1 : ] + self.I[ :   , : -1])/2).sum() / I_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
 
-        return np.array([Ig0, Ig1])*phase.shape[0]
+        # plt.imshow(self.Im)
+        # plt.colorbar()
+        # plt.show()
+        # plt.clf()
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
 
 
 class OneStepSHWFS():
@@ -132,41 +233,20 @@ class OneStepSHWFS():
     def measure_no_noise_no_threshold(self, U):
         """Measure tilt. U must not be zero-padded."""
         self.Im = np.abs(np.fft.fftshift(
-            self.FF01(np.pad(U * self.Q *self.pupil,
+            self.FF01(np.pad(U * self.Q * self.pupil,
                              (self.a, self.a), 'constant', constant_values=0.))
             )[self.a : self.b, self.a : self.b])**2
-        self.Im = self.Im/((self.Im).sum())
+        self.Im = self.Im/self.Im.sum()
 
-        SHWFS0 = (self.Im * self.xwfs).sum()
-        SHWFS1 = (self.Im * self.ywfs).sum()
+        SHWFS0 = np.sum(self.Im * self.xwfs)
+        SHWFS1 = np.sum(self.Im * self.ywfs)
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*np.pi
-
-    def measure_photon_noise(self, U, Nphot):
-        """Measure tilt. U must not be zero-padded."""
-        self.Im = np.abs(np.fft.fftshift(
-            self.FF01(np.pad(U * self.pupil * self.Q,
-                             (self.a, self.a), 'constant', constant_values=0.))
-            )[self.a : self.b, self.a : self.b])**2
-
-        self.Im = self.Im * Nphot/((self.Im).sum())
-        self.Im = np.random.poisson(self.Im)
-
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
-        
-        # plt.imshow(self.Im)
-        # plt.colorbar()
-        # plt.show()
-        # plt.clf()
-
-        return np.array([SHWFS0, SHWFS1])*np.pi
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
 
     def measure_with_noise_no_threshold(self, U, Nphot, sigma_readout):
         """Measure tilt. U must not be zero-padded."""
@@ -175,21 +255,21 @@ class OneStepSHWFS():
                              (self.a, self.a), 'constant', constant_values=0.))
             )[self.a : self.b, self.a : self.b])**2
 
-        self.Im = self.Im * Nphot/((self.Im).sum())
+        self.Im = self.Im * Nphot/self.Im.sum()
         self.Im = (np.random.poisson(self.Im)
                    + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
         self.Im[self.Im < 0] = 0.
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*np.pi
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
 
     def measure_with_noise_with_threshold(self, U, Nphot, sigma_readout, MaxNormThreshold):
         """Measure tilt. U must not be zero-padded. In number of photons."""
@@ -198,7 +278,7 @@ class OneStepSHWFS():
                              (self.a, self.a), 'constant', constant_values=0.))
             )[self.a : self.b, self.a : self.b])**2
 
-        self.Im = self.Im * Nphot/((self.Im).sum())
+        self.Im = self.Im * Nphot/self.Im.sum()
         self.Im = (np.random.poisson(self.Im)
                    + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
         
@@ -207,16 +287,16 @@ class OneStepSHWFS():
         
         self.Im[self.Im < 0] = 0.
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
 
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*np.pi
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
 
     # def measure_with_noise_with_threshold(self, U, Nphot, sigma_readout, SDThreshold):
     #     """Measure tilt. U must not be zero-padded. In number of photons."""
@@ -225,23 +305,23 @@ class OneStepSHWFS():
     #                          (self.a, self.a), 'constant', constant_values=0.))
     #         )[self.a : self.b, self.a : self.b])**2
 
-    #     self.Im = self.Im * Nphot/((self.Im).sum())
+    #     self.Im = self.Im * Nphot/self.Im.sum()
     #     self.Im = (np.random.poisson(self.Im)
     #                + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
     #     background = np.std(self.Im)
     #     self.Im = self.Im - SDThreshold*background
     #     self.Im[self.Im < 0] = 0.
 
-    #     Im_sum = (self.Im).sum()
-    #     SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-    #     SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+    #     Im_sum = np.sum(self.Im)
+    #     SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+    #     SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
 
     #     # plt.imshow(self.Im)
     #     # plt.colorbar()
     #     # plt.show()
     #     # plt.clf()
 
-    #     return np.array([SHWFS0, SHWFS1])*np.pi
+    #     return np.asarray([SHWFS0, SHWFS1])*np.pi
 
 class AngularPropSHWFS():
     """
@@ -314,17 +394,17 @@ class AngularPropSHWFS():
                             )))
                         )))
         self.Im = np.abs(self.U_focal[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
-        self.Im = self.Im/(self.Im).sum()
+        self.Im = self.Im/self.Im.sum()
 
-        SHWFS0 = (self.Im * self.xwfs).sum()
-        SHWFS1 = (self.Im * self.ywfs).sum()
+        SHWFS0 = np.sum(self.Im * self.xwfs)
+        SHWFS1 = np.sum(self.Im * self.ywfs)
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*self.convert
+        return np.asarray([SHWFS0, SHWFS1])*self.convert
 
     def measure_no_noise_with_threshold(self, U_in, SDThreshold):
         """Measure tilt. U must not be zero-padded. Normalized to max I."""
@@ -342,16 +422,16 @@ class AngularPropSHWFS():
         self.Im[self.Im < 0] = 0.
         self.Im = self.Im / self.Im.max()
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*self.convert
+        return np.asarray([SHWFS0, SHWFS1])*self.convert
 
     # def measure_with_noise_no_threshold(self, U_in, Nphot, sigma_readout):
     def measure_photon_noise(self, U_in, Nphot):
@@ -364,21 +444,21 @@ class AngularPropSHWFS():
                         )))
         self.Im = np.abs(self.U_focal[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
 
-        self.Im = self.Im * Nphot/((self.Im).sum())
+        self.Im = self.Im * Nphot/self.Im.sum()
         # self.Im = (np.random.poisson(self.Im)
         #            + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
         self.Im = (np.random.poisson(self.Im))
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*self.convert
+        return np.asarray([SHWFS0, SHWFS1])*self.convert
     
     def measure_with_noise_no_threshold(self, U_in, Nphot, sigma_readout):
         """Measure tilt. U must not be zero-padded."""
@@ -390,19 +470,19 @@ class AngularPropSHWFS():
                         )))
         self.Im = np.abs(self.U_focal[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
 
-        self.Im = self.Im * Nphot/((self.Im).sum())
+        self.Im = self.Im * Nphot/self.Im.sum()
         self.Im = (np.random.poisson(self.Im)
                     + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
-        return np.array([SHWFS0, SHWFS1])*self.convert
+        return np.asarray([SHWFS0, SHWFS1])*self.convert
 
     def measure_with_noise_with_threshold(self, U_in, Nphot, sigma_readout, SDThreshold):
         """Measure tilt. U must not be zero-padded. In number of photons."""
@@ -414,65 +494,23 @@ class AngularPropSHWFS():
                         )))
         self.Im = np.abs(self.U_focal[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
 
-        self.Im = self.Im * Nphot/((self.Im).sum())
+        self.Im = self.Im * Nphot/self.Im.sum()
         self.Im = (np.random.poisson(self.Im)
                     + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
         background = np.std(self.Im)
         self.Im = self.Im - background*SDThreshold
         self.Im[self.Im < 0] = 0.
 
-        Im_sum = (self.Im).sum()
-        SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-        SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
 
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
-        return np.array([SHWFS0, SHWFS1])*self.convert
-
-class UnwrappedIgTilt():
-    """Unwrapped Ig tilt."""
-
-    def __init__(self, N):
-        self.phase = np.zeros((N, N), dtype=float)
-        self.I = np.zeros((N, N), dtype=float)
-        self.gx = np.zeros((N - 1, N), dtype=float)
-        self.gy = np.zeros((N, N - 1), dtype=float)
-        self.pupil = zernikeArray(1, N)[0]
-
-    def measure(self, U):
-        """Measure tilt in rad/lenslet."""
-        self.phase = np.angle(U)
-        self.I = np.abs(U)**2 * self.pupil
-        I_sum = (self.I).sum()
-
-        self.gx = self.phase[1 : ,   : ] - self.phase[ : -1, :   ]
-        self.gy = self.phase[  : , 1 : ] - self.phase[ :   , : -1]
-
-        Ig0 = (self.gx
-               * (self.I[1 : ,   : ] + self.I[ : -1, :   ])/2).sum() / I_sum
-        Ig1 = (self.gy
-               * (self.I[  : , 1 : ] + self.I[ :   , : -1])/2).sum() / I_sum
-
-        return np.array([Ig0, Ig1])*U.shape[0]
-
-    def measure_from_phase_I(self, phase, I):
-        """Measure tilt in rad/lenslet."""
-        self.phase = phase
-        self.I = I * self.pupil
-        I_sum = (self.I).sum()
-
-        self.gx = self.phase[1 : ,   : ] - self.phase[ : -1, :   ]
-        self.gy = self.phase[  : , 1 : ] - self.phase[ :   , : -1]
-
-        Ig0 = (self.gx
-               * (self.I[1 : ,   : ] + self.I[ : -1, :   ])/2).sum() / I_sum
-        Ig1 = (self.gy
-               * (self.I[  : , 1 : ] + self.I[ :   , : -1])/2).sum() / I_sum
-
-        return np.array([Ig0, Ig1])*phase.shape[0]
+        return np.asarray([SHWFS0, SHWFS1])*self.convert
 
 class WrappedGTilt():
     """Wrapped G tilt."""
@@ -484,14 +522,13 @@ class WrappedGTilt():
         pupil = zernikeArray(1, N)[0]
         self.pupilx = pupil[1 : ,   : ] * pupil[ : -1, :   ]
         self.pupily = pupil[  : , 1 : ] * pupil[ :   , : -1]
-        self.sumx = (self.pupilx).sum()
-        self.sumy = (self.pupily).sum()
+        self.sumx = np.sum(self.pupilx)
+        self.sumy = np.sum(self.pupily)
         del pupil
+
     def measure(self, U):
         """Measure tilt in rad/lenslet."""
         self.phase = np.angle(U)
-        
-        
 
         self.gx = self.phase[1 : ,   : ] - self.phase[ : -1, :   ]
         self.gy = self.phase[  : , 1 : ] - self.phase[ :   , : -1]
@@ -501,34 +538,7 @@ class WrappedGTilt():
         self.gy[self.gy >  np.pi] = self.gy[self.gy >  np.pi] - 2*np.pi
         self.gy[self.gy < -np.pi] = self.gy[self.gy < -np.pi] + 2*np.pi
 
-        return np.array([(self.gx*self.pupilx).sum()/self.sumx,
-                           (self.gy*self.pupily).sum()/self.sumy])*U.shape[0]
-
-class UnwrappedGTilt():
-    """Unwrapped G tilt."""
-
-    def __init__(self, N):
-        self.phase = np.zeros((N, N), dtype=float)
-        pupil = zernikeArray(1, N)[0]
-        self.pupilx = pupil[1 : ,   : ] * pupil[ : -1, :   ]
-        self.pupily = pupil[  : , 1 : ] * pupil[ :   , : -1]
-
-    def measure(self, U):
-        """Measure tilt in rad/lenslet."""
-        self.phase = np.angle(U)
-        return np.array([np.mean((self.phase[1 : ,   : ]
-                                  - self.phase[ : -1, :   ])*self.pupilx),
-                            np.mean((self.phase[  : , 1 : ]
-                                  - self.phase[ :   , : -1])*self.pupily)])
-    
-    def measure_from_phase(self, phase):
-        """Measure tilt in rad/lenslet."""
-        self.phase = phase
-
-        return np.array([np.mean((self.phase[1 : ,   : ]
-                                  - self.phase[ : -1, :   ])*self.pupilx),
-                            np.mean((self.phase[  : , 1 : ]
-                                  - self.phase[ :   , : -1])*self.pupily)])
+        return np.asarray([np.sum(self.gx*self.pupilx)/self.sumx, np.sum(self.gy*self.pupily)/self.sumy])*U.shape[0]
 
 class ZTilt():
     """Z tilt. For unwrapped phase only."""
@@ -539,18 +549,18 @@ class ZTilt():
         self.pupil = Z_3[0].flatten()
         self.tip = Z_3[1].flatten()
         self.tilt = Z_3[2].flatten()
-        self.NORM= (self.pupil.flatten() * self.pupil.flatten()).sum()
+        self.NORM= np.dot(self.pupil.flatten(), self.pupil.flatten())
         self.phase = np.zeros((self.N, self.N), dtype=float)
         del Z_3
 
     def measure_from_phase(self, unwrapped_phase):
         """Measure tilt."""
         self.phase = unwrapped_phase
-        slopex = ((self.phase.flatten()*self.pupil * self.tilt).sum()
+        slopex = (np.dot(self.phase.flatten()*self.pupil, self.tilt)
                 / self.NORM)*(4/self.N)
-        slopey = ((self.phase.flatten()*self.pupil * self.tip).sum()
+        slopey = (np.dot(self.phase.flatten()*self.pupil, self.tip)
                 / self.NORM)*(4/self.N)
-        return np.array([slopex, slopey])
+        return np.asarray([slopex, slopey])
 
 # class ConsecutiveAngularPropSHWFS():
 #     """
@@ -643,16 +653,16 @@ class ZTilt():
 #                                 )))
 #                             )))
 #         self.Im = np.abs(self.U_pupil[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
-#         self.Im = self.Im/((self.Im).sum())
-#         SHWFS0 = (self.Im * self.xwfs).sum()
-#         SHWFS1 = (self.Im * self.ywfs).sum()
+#         self.Im = self.Im/self.Im.sum()
+#         SHWFS0 = np.sum(self.Im * self.xwfs)
+#         SHWFS1 = np.sum(self.Im * self.ywfs)
         
 #         # plt.imshow(self.Im)
 #         # plt.colorbar()
 #         # plt.show()
 #         # plt.clf()
         
-#         return np.array([SHWFS0, SHWFS1])*self.convert
+#         return np.asarray([SHWFS0, SHWFS1])*self.convert
     
 #     def measure_no_noise_with_threshold(self, U_in, MaxNormThreshold):
 #         """Measure tilt. U must not be zero-padded. Normalized to max I."""
@@ -673,16 +683,16 @@ class ZTilt():
 #         self.Im[self.Im < 0] = 0.
 #         self.Im = self.Im / self.Im.max()
 
-#         Im_sum = (self.Im).sum()
-#         SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-#         SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+#         Im_sum = np.sum(self.Im)
+#         SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+#         SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
 #         # plt.imshow(self.Im)
 #         # plt.colorbar()
 #         # plt.show()
 #         # plt.clf()
 
-#         return np.array([SHWFS0, SHWFS1])*self.convert
+#         return np.asarray([SHWFS0, SHWFS1])*self.convert
 
 #     def measure_with_noise_no_threshold(self, U_in, Nphot, sigma_readout):
 #         """Measure tilt. U must not be zero-padded."""
@@ -698,21 +708,21 @@ class ZTilt():
 #                             )))
 #         self.Im = np.abs(self.U_pupil[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
 
-#         self.Im = self.Im * Nphot/((self.Im).sum())
+#         self.Im = self.Im * Nphot/self.Im.sum()
 #         self.Im = (np.random.poisson(self.Im)
 #                    + np.random.normal(0, sigma_readout, size=(self.n_out, self.n_out)))
 #         self.Im[self.Im < 0] = 0.
 
-#         Im_sum = (self.Im).sum()
-#         SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-#         SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+#         Im_sum = np.sum(self.Im)
+#         SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+#         SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
         
 #         # plt.imshow(self.Im)
 #         # plt.colorbar()
 #         # plt.show()
 #         # plt.clf()
 
-#         return np.array([SHWFS0, SHWFS1])*self.convert
+#         return np.asarray([SHWFS0, SHWFS1])*self.convert
 
 #     def measure_with_noise_with_threshold(self, U_in, Nphot, sigma_readout, Threshold):
 #         """Measure tilt. U must not be zero-padded. In number of photons."""
@@ -728,19 +738,19 @@ class ZTilt():
 #                             )))
 #         self.Im = np.abs(self.U_pupil[self.cut_out:self.N-self.cut_out,self.cut_out:self.N-self.cut_out])**2
 
-#         self.Im = self.Im * Nphot/((self.Im).sum())
+#         self.Im = self.Im * Nphot/self.Im.sum()
 #         self.Im = (np.random.poisson(self.Im)
 #                    + np.random.normal(0, sigma_readout, size=(self.n_out, self.n_out))
 #                    - Threshold)
 #         self.Im[self.Im < 0] = 0.
 
-#         Im_sum = (self.Im).sum()
-#         SHWFS0 = (self.Im * self.xwfs).sum()/Im_sum
-#         SHWFS1 = (self.Im * self.ywfs).sum()/Im_sum
+#         Im_sum = np.sum(self.Im)
+#         SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+#         SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
 
 #         # plt.imshow(self.Im)
 #         # plt.colorbar()
 #         # plt.show()
 #         # plt.clf()
 
-#         return np.array([SHWFS0, SHWFS1])*self.convert
+#         return np.asarray([SHWFS0, SHWFS1])*self.convert

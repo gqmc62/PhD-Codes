@@ -5,21 +5,22 @@ Created on Wed Mar 13 11:58:34 2024
 @author: gqmc62
 """
 
-# home = '/mt/cfai-temp/pkongkaew/conf'
-# saveto = '/mt/cfai-temp/pkongkaew/output'
-# import soapy
+home = '/mt/cfai-temp/pkongkaew/conf'
+saveto = '/mt/cfai-temp/pkongkaew/output'
+import soapy
 
-home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf'
-saveto = home#r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\GLDM-IM-through-turb'
-from soapy import soapy
+# home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf'
+# saveto = home#r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\GLDM-IM-through-turb'
+# from soapy import soapy
 
 import numpy as np
 
-TRIAL = 10 #50
+TRIAL = 100 #50
 LOOP = 5 #100
 z_limit = np.inf#5e3 #25e3
 CASE_STUDY = np.array([])#np.array([0,12,16],dtype=int)#14 22 9 12
 SKIP = np.array([],dtype=int)
+
 
 from matplotlib import pyplot as plt
 
@@ -1155,7 +1156,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     #         Y[trial,loop] = y
 
     # y = np.nanmean(Y,axis=0)
-    # x = ((np.arange(y.shape[-1]) + 1) * 1/(A.shape[-1]*delta))
+    # x = ((np.arange(y.shape[-1]) + 1) * 1/(INSCRIBED_SIZE*delta))
     # # perfect_PSD= np.copy(x)
     # perfect_PSD_phase_open = np.copy(Y)
     # # for loop in np.array([0,-1]):#np.arange(LOOP):
@@ -1214,6 +1215,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
         for jj in np.arange(phase.shape[1]):
             phase[ii,jj] = my_unwrap(np.angle(np.nan_to_num(A[ii,jj])))
     x = get_PSD(crop_inscribed_square(phase[0,0]),delta)
+    INSCRIBED_SIZE = crop_inscribed_square(phase[0,0]).shape[-1]
     y = x[x.shape[0]//2 + 1 : ,x.shape[0]//2]
 
     Y = np.zeros((TRIAL,LOOP,y.shape[0]),dtype=float)
@@ -1225,7 +1227,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
             Y[trial,loop] = y
 
     y = np.nanmean(Y,axis=0)
-    x = ((np.arange(y.shape[-1]) + 1) * 1/(A.shape[-1]*delta))
+    x = ((np.arange(y.shape[-1]) + 1) * 1/(INSCRIBED_SIZE*delta))
     # perfect_PSD= np.copy(x)
     perfect_PSD_phase = np.copy(Y)
     # for loop in np.array([0,-1]):#np.arange(LOOP):
@@ -1296,7 +1298,16 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
             Y[trial,loop] = y
 
     y = np.nanmean(Y,axis=0)
-    x = ((np.arange(y.shape[-1]) + 1) * 1/(A.shape[-1]*delta))
+    x = ((np.arange(y.shape[-1]) + 1) * 1/(INSCRIBED_SIZE*delta))
+    # x = ((np.arange(y.shape[-1]) + 1) * 1/(A.shape[-1]*delta))
+    # # this should not be A.shape because i use a smaller inscribed square!!!
+    # # so the frequency is wrong
+    # # should adjust A.shape[-1] ==> A.shape[-1]/np.sqrt(2)
+    # # if too lazy to change code, or for older result than 20 nov 24
+    # # multiply freq by sqrt(2)
+    # # no change in psd because it only take delta which is unchange
+    # # nnah that didn't really work. best to just change x = ...
+    # if_you_are_running this again, fix the thing on the top throughout this file.
     PSD_phase_frequency = np.copy(x)
     PSD_phase = np.copy(Y)
     # for loop in np.array([0,-1]):#np.arange(LOOP):
@@ -1375,7 +1386,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     #         Y[trial,loop] = y
 
     # y = np.nanmean(Y,axis=0)
-    # x = ((np.arange(y.shape[-1]) + 1) * 1/(A.shape[-1]*delta))
+    # x = ((np.arange(y.shape[-1]) + 1) * 1/(INSCRIBED_SIZE*delta))
     # PSD_phase_frequency_open = np.copy(x)
     # PSD_phase_open = np.copy(Y)
     # # for loop in np.array([0,-1]):#np.arange(LOOP):
@@ -2158,4 +2169,3 @@ with open('name_space.txt', 'w') as outfile:
 # Now i need to compile one data set into one file: for easy grab
 # the reason i had them saved separately earlier was to reduce memory usage.
 #
-
