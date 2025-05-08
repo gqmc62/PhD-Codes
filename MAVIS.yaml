@@ -1,0 +1,14 @@
+mcaoName: MAVIS
+
+pupilDiam: 8.2
+mcaoFov: 120
+
+nDM: 3
+dmHeight: [6000,13500,0]
+dmProjPitch: [0.253,0.315,0.22]
+
+wfsWvl: 589e-9
+wfsProjPitch: 0.216
+
+turbProfileName: paranal-median.csv
+scaleToR0: 0.14

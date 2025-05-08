@@ -1,0 +1,14 @@
+mcaoName: MORFEO
+
+pupilDiam: 38.5
+mcaoFov: 160
+
+nDM: 3
+dmHeight: [7,17.5,0.6]
+dmProjPitch: [85,125,50]
+
+wfsWvl: 589
+wfsProjPitch: 55
+
+turbProfileName: paranal-median.csv
+scaleToR0: 0.14

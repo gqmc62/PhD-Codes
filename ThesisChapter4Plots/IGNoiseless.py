@@ -153,28 +153,98 @@ for kk in np.arange(KK):
 # plt.colorbar()
 # plt.xlabel('r0 (cm)')
 # plt.ylabel('d/r0')
+plt.savefig('IG-Tilt-RMS.png')
 plt.show()
 plt.clf()
-
-
 
 
 W = 64/2
 atm_error = (0.5*W**-2*(dor0)**(5./3.))**0.5
 
-ATM_ERROR = np.zeros_like(var)
-for jj in np.arange(JJ):
-    ATM_ERROR[:,jj] = atm_error[jj]
+# ATM_ERROR = np.zeros_like(var)
+# for jj in np.arange(JJ):
+#     ATM_ERROR[:,jj] = atm_error[jj]
 
+# color_map = plt.cm.get_cmap('inferno')
+# reversed_color_map = color_map.reversed()
+# plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
+# # plt.subplot(4,4,1)
+# plt.suptitle('RMS ATM_error of SHWFS slopes (rad/lenslet)')
+# for kk in np.arange(KK):
+#     for ll in np.arange(LL):
+#         plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
+#         plt.pcolor(r0*100, dor0, ATM_ERROR[:,:,kk,ll].T,
+#                    vmin=np.sqrt(varmin),vmax=np.sqrt(varmax),
+#                    cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
+#         # plt.colorbar()
+#         # plt.xlabel('r0 (cm)')
+#         # plt.ylabel('d/r0')
+#         # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
+#         if kk == 0:
+#             plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
+#         if ll == 0:
+#             plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
+#         if ll == (LL - 1):
+#             plt.colorbar()
+# # plt.subplot(4,4,1)
+# # plt.colorbar()
+# # plt.xlabel('r0 (cm)')
+# # plt.ylabel('d/r0')
+# plt.show()
+# plt.clf()
+
+###############################################################################
+
+avg = np.nanmean(g_SLOPE - SHWFS_SLOPE, axis=(-1,-2))
+var = np.nanvar(g_SLOPE - SHWFS_SLOPE, ddof=1, axis=(-1,-2))
+avg[avg==0] = np.nan
+var[var==0] = np.nan
+
+varmin = np.nanmin(var)
+varmax = np.nanmax(var)
+avgmin = np.nanmin(avg)
+avgmax = np.nanmax(avg)
+
+min_slope = -np.nanmax([np.abs(SHWFS_SLOPE),np.abs(Ig_SLOPE),np.abs(g_SLOPE)])
+max_slope = np.nanmax([np.abs(SHWFS_SLOPE),np.abs(Ig_SLOPE),np.abs(g_SLOPE)])
+
+rms = np.sqrt(np.nanmean((g_SLOPE - SHWFS_SLOPE)**2, axis=(-1,-2)))
+
+LABEL_r0 = np.zeros((II), dtype=object)
+for ii in np.arange(II):
+    LABEL_r0[ii] = 'r0={:.0f}cm'.format(r0[ii]*100)
+
+LABEL_DOR0 = np.zeros((JJ), dtype=object)
+for jj in np.arange(JJ):
+    LABEL_DOR0[jj] = 'd/r0={:.1f}'.format(dor0[jj])
+    
+LABEL_RYTOV = np.zeros((KK), dtype=object)
+for kk in np.arange(KK):
+    LABEL_RYTOV[kk] = '$\sigma^2_\chi=${:.2f}'.format(Rytov[kk])
+    
+LABEL_HHA = np.zeros((LL), dtype=object)
+for ll in np.arange(LL):
+    LABEL_HHA[ll] = 'HA={:.0f}km'.format(H_HA[ll]/1000)
+
+
+
+###############################################################################
+# ░▒█░▒█░█▀▀░█▀▀░█▀▀░█░▒█░█░░░░▒█▀▀█░█░░▄▀▀▄░▀█▀░█▀▀
+# ░▒█░▒█░▀▀▄░█▀▀░█▀░░█░▒█░█░░░░▒█▄▄█░█░░█░░█░░█░░▀▀▄
+# ░░▀▄▄▀░▀▀▀░▀▀▀░▀░░░░▀▀▀░▀▀░░░▒█░░░░▀▀░░▀▀░░░▀░░▀▀▀
+###############################################################################
+
+# plt.figure()
+# Figure 1
 color_map = plt.cm.get_cmap('inferno')
 reversed_color_map = color_map.reversed()
 plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
 # plt.subplot(4,4,1)
-plt.suptitle('RMS ATM_error of SHWFS slopes (rad/lenslet)')
+plt.suptitle('RMS difference of g and SHWFS slopes (rad/lenslet)')
 for kk in np.arange(KK):
     for ll in np.arange(LL):
         plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
-        plt.pcolor(r0*100, dor0, ATM_ERROR[:,:,kk,ll].T,
+        plt.pcolor(r0*100, dor0, np.sqrt(var[:,:,kk,ll]).T,
                    vmin=np.sqrt(varmin),vmax=np.sqrt(varmax),
                    cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
         # plt.colorbar()
@@ -191,107 +261,111 @@ for kk in np.arange(KK):
 # plt.colorbar()
 # plt.xlabel('r0 (cm)')
 # plt.ylabel('d/r0')
-plt.show()
-plt.clf()
-
-##############################################################################
-
-# plt.figure()
-# Figure 1
-
-ATM_MAX = ATM_ERROR.max()
-ATM_MIN = ATM_ERROR.min()
-color_map = plt.cm.get_cmap('inferno')
-reversed_color_map = color_map.reversed()
-plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
-# plt.subplot(4,4,1)
-plt.suptitle('RMS difference of Ig and SHWFS slopes (rad/lenslet)')
-for kk in np.arange(KK):
-    for ll in np.arange(LL):
-        plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
-        plt.pcolor(r0*100, dor0, np.sqrt(var[:,:,kk,ll]).T,
-                   vmin=ATM_MIN,vmax=ATM_MAX,
-                   cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
-        # plt.colorbar()
-        # plt.xlabel('r0 (cm)')
-        # plt.ylabel('d/r0')
-        # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
-        if kk == 0:
-            plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
-        if ll == 0:
-            plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
-        if ll == (LL - 1):
-            plt.colorbar()
-# plt.subplot(4,4,1)
-# plt.colorbar()
-# plt.xlabel('r0 (cm)')
-# plt.ylabel('d/r0')
+plt.savefig('G-Tilt-RMS.png')
 plt.show()
 plt.clf()
 
 
-color_map = plt.cm.get_cmap('inferno')
-reversed_color_map = color_map.reversed()
-plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
-# plt.subplot(4,4,1)
-plt.suptitle('RMS ATM_error of SHWFS slopes (rad/lenslet)')
-for kk in np.arange(KK):
-    for ll in np.arange(LL):
-        plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
-        plt.pcolor(r0*100, dor0, ATM_ERROR[:,:,kk,ll].T,
-                   vmin=ATM_MIN,vmax=ATM_MAX,
-                   cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
-        # plt.colorbar()
-        # plt.xlabel('r0 (cm)')
-        # plt.ylabel('d/r0')
-        # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
-        if kk == 0:
-            plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
-        if ll == 0:
-            plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
-        if ll == (LL - 1):
-            plt.colorbar()
-# plt.subplot(4,4,1)
-# plt.colorbar()
-# plt.xlabel('r0 (cm)')
-# plt.ylabel('d/r0')
-plt.show()
-plt.clf()
 
-#############################################################################
 
-# plt.figure()
-# Figure 1
-g_var = np.nanvar(g_SLOPE - SHWFS_SLOPE, ddof=1, axis=(-1,-2))
-g_var[g_var==0] = np.nan
+# ##############################################################################
 
-color_map = plt.cm.get_cmap('inferno')
-reversed_color_map = color_map.reversed()
-plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
-# plt.subplot(4,4,1)
-plt.suptitle('RMS difference of g and SHWFS slopes (rad/lenslet)')
-for kk in np.arange(KK):
-    for ll in np.arange(LL):
-        plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
-        plt.pcolor(r0*100, dor0, np.sqrt(g_var[:,:,kk,ll]).T,
-                   vmin=np.sqrt(np.nanmin(g_var)),vmax=np.sqrt(np.nanmax(g_var)),
-                   cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
-        # plt.colorbar()
-        # plt.xlabel('r0 (cm)')
-        # plt.ylabel('d/r0')
-        # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
-        if kk == 0:
-            plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
-        if ll == 0:
-            plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
-        if ll == (LL - 1):
-            plt.colorbar()
-# plt.subplot(4,4,1)
-# plt.colorbar()
-# plt.xlabel('r0 (cm)')
-# plt.ylabel('d/r0')
-plt.show()
-plt.clf()
+# # plt.figure()
+# # Figure 1
+
+# ATM_MAX = ATM_ERROR.max()
+# ATM_MIN = ATM_ERROR.min()
+# color_map = plt.cm.get_cmap('inferno')
+# reversed_color_map = color_map.reversed()
+# plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
+# # plt.subplot(4,4,1)
+# plt.suptitle('RMS difference of Ig and SHWFS slopes (rad/lenslet)')
+# for kk in np.arange(KK):
+#     for ll in np.arange(LL):
+#         plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
+#         plt.pcolor(r0*100, dor0, np.sqrt(var[:,:,kk,ll]).T,
+#                    vmin=ATM_MIN,vmax=ATM_MAX,
+#                    cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
+#         # plt.colorbar()
+#         # plt.xlabel('r0 (cm)')
+#         # plt.ylabel('d/r0')
+#         # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
+#         if kk == 0:
+#             plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
+#         if ll == 0:
+#             plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
+#         if ll == (LL - 1):
+#             plt.colorbar()
+# # plt.subplot(4,4,1)
+# # plt.colorbar()
+# # plt.xlabel('r0 (cm)')
+# # plt.ylabel('d/r0')
+# plt.show()
+# plt.clf()
+
+
+# color_map = plt.cm.get_cmap('inferno')
+# reversed_color_map = color_map.reversed()
+# plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
+# # plt.subplot(4,4,1)
+# plt.suptitle('RMS ATM_error of SHWFS slopes (rad/lenslet)')
+# for kk in np.arange(KK):
+#     for ll in np.arange(LL):
+#         plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
+#         plt.pcolor(r0*100, dor0, ATM_ERROR[:,:,kk,ll].T,
+#                    vmin=ATM_MIN,vmax=ATM_MAX,
+#                    cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
+#         # plt.colorbar()
+#         # plt.xlabel('r0 (cm)')
+#         # plt.ylabel('d/r0')
+#         # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
+#         if kk == 0:
+#             plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
+#         if ll == 0:
+#             plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
+#         if ll == (LL - 1):
+#             plt.colorbar()
+# # plt.subplot(4,4,1)
+# # plt.colorbar()
+# # plt.xlabel('r0 (cm)')
+# # plt.ylabel('d/r0')
+# plt.show()
+# plt.clf()
+
+# #############################################################################
+
+# # plt.figure()
+# # Figure 1
+# g_var = np.nanvar(g_SLOPE - SHWFS_SLOPE, ddof=1, axis=(-1,-2))
+# g_var[g_var==0] = np.nan
+
+# color_map = plt.cm.get_cmap('inferno')
+# reversed_color_map = color_map.reversed()
+# plt.subplots(4,4,sharex=True,sharey=True,squeeze=False)
+# # plt.subplot(4,4,1)
+# plt.suptitle('RMS difference of g and SHWFS slopes (rad/lenslet)')
+# for kk in np.arange(KK):
+#     for ll in np.arange(LL):
+#         plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
+#         plt.pcolor(r0*100, dor0, np.sqrt(g_var[:,:,kk,ll]).T,
+#                    vmin=np.sqrt(np.nanmin(g_var)),vmax=np.sqrt(np.nanmax(g_var)),
+#                    cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
+#         # plt.colorbar()
+#         # plt.xlabel('r0 (cm)')
+#         # plt.ylabel('d/r0')
+#         # plt.title(LABEL_RYTOV[kk] + ', ' + LABEL_HHA[ll])
+#         if kk == 0:
+#             plt.xlabel('r0 (cm)\n' + LABEL_HHA[ll])
+#         if ll == 0:
+#             plt.ylabel(LABEL_RYTOV[kk] + '\nd/r0')
+#         if ll == (LL - 1):
+#             plt.colorbar()
+# # plt.subplot(4,4,1)
+# # plt.colorbar()
+# # plt.xlabel('r0 (cm)')
+# # plt.ylabel('d/r0')
+# plt.show()
+# plt.clf()
 
 ###############################################################################
 # ░▒█░▒█░█▀▀░█▀▀░█▀▀░█░▒█░█░░░░▒█▀▀█░█░░▄▀▀▄░▀█▀░█▀▀
@@ -642,7 +716,58 @@ plt.clf()
 ##########################################################################
 ###############################################################################
 
-# for ii in np.arange(II):
-#     for jj in np.arange(JJ):
-#         for ll in np.arange(LL):
-#             print(r0[ii],dor0[jj],Rytov[kk],H_HA[ll],POSSIBLE_SCREEN[ii,kk,ll],POSSIBLE_PROP[ii,jj,ll])
+Ig_SLOPE[Ig_SLOPE==0]=np.nan
+g_SLOPE[g_SLOPE==0]=np.nan
+SHWFS_SLOPE[SHWFS_SLOPE==0]=np.nan
+
+plt.plot(dor0,atm_error,label='centroiding error',color='k')
+val = (np.nanmean((Ig_SLOPE-SHWFS_SLOPE)**2,axis=(-1,-2)))**0.5
+mean = np.nanmean(val,axis=(0,2,3))
+std = np.nanstd(val,axis=(0,2,3))
+# top = mean + std
+# bottom = mean - std
+# plt.plot(dor0,mean,
+#          marker='o',ls='-',color='r',label='Ig error')
+# plt.fill_between(dor0,bottom,top,alpha=0.5,color='r')
+plt.errorbar(dor0,mean,yerr=std
+             ,marker='o',ls='-',color='r',label='IG error',capsize=5)
+
+plt.legend()
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('d/r0')
+plt.ylabel('rms OPD (rad)')
+plt.savefig('Ig-atm-error.png')
+plt.show()
+plt.clf()
+
+
+
+
+# Ig_SLOPE[Ig_SLOPE==0]=np.nan
+# g_SLOPE[g_SLOPE==0]=np.nan
+# SHWFS_SLOPE[SHWFS_SLOPE==0]=np.nan
+
+
+# plt.plot(dor0,atm_error,label='atm_error',color='k')
+# val = (np.nanmean((Ig_SLOPE-SHWFS_SLOPE)**2,axis=(-1,-2)))**0.5
+# mean = np.nanmean(val,axis=(0,2,3))
+# std = np.nanstd(val,axis=(0,2,3))
+
+# plt.errorbar(dor0,mean,yerr=std
+#              ,marker='o',ls='-',color='r',label='Ig error',capsize=5)
+
+# val2 = (np.nanmean((g_SLOPE-SHWFS_SLOPE)**2,axis=(-1,-2)))**0.5
+# mean2 = np.nanmean(val2,axis=(0,2,3))
+# std2 = np.nanstd(val2,axis=(0,2,3))
+# plt.errorbar(dor0,mean2,yerr=std2
+#              ,marker='o',ls='-',color='b',label='g error',capsize=5)
+
+# plt.legend()
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.savefig('Ig-g-atm-error.png')
+# plt.show()
+# plt.clf()
+
+

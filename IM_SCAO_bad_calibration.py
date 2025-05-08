@@ -5,22 +5,39 @@ Created on Wed Mar 13 11:58:34 2024
 @author: gqmc62
 """
 
-home = '/mt/cfai-temp/pkongkaew/conf'
-saveto = '/mt/cfai-temp/pkongkaew/output'
-import soapy
+# home = '/mt/cfai-temp/pkongkaew/conf'
+# saveto = '/mt/cfai-temp/pkongkaew/output'
+# import soapy
 
-# home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf'
-# saveto = home#r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\GLDM-IM-through-turb'
-# from soapy import soapy
+home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf'
+saveto = home#r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\GLDM-IM-through-turb'
+from soapy import soapy
 
 import numpy as np
 
-TRIAL = 100 #50
+TRIAL = 1 #50    0,1,2,3,6,10,16,20
 LOOP = 5 #100
-z_limit = np.inf#5e3 #25e3
-CASE_STUDY = np.array([])#np.array([0,12,16],dtype=int)#14 22 9 12
+z_limit = 10e3 #5e3 #25e3 # np.inf#
+CASE_STUDY = np.array([19])#np.array([0,12,16],dtype=int)#14 22 9 12 
 SKIP = np.array([],dtype=int)
+newIMat = True#False#
+PLOT = False#True#
 
+# original_name = 'bad_IM_A' # 10 nxsubap
+# original_name = 'bad_IM_B' # 8 nxsubap
+# original_name = 'bad_IM_C'# 6 nxsubap
+
+original_name = 'bad_IM_A2' # 8 nxsubap
+# original_name = 'bad_IM_B2' # 6 nxsubap
+# original_name = 'bad_IM_C2'# 4 nxsubap
+
+wvl = 500e-9
+# aber_L0 = 8
+
+GL_r0 = 0.10
+MODE = 45 # 105 # 91 # 45 # 153
+
+r0_well_sampled_limit = 0.02
 
 from matplotlib import pyplot as plt
 
@@ -104,7 +121,7 @@ def bin_this(A, w):
     return a
 
 def angle_of_arrival(wvl,D,r0):
-    alpha = np.sqrt(0.182 * wvl**2 * D**(-1./3.) * r0**(-5./3.))
+    alpha = np.sqrt(0.162 * wvl**2 * D**(-1./3.) * r0**(-5./3.))
     return alpha
 
 def scrn_size_at_alt(wvl, D, r0, z):
@@ -452,17 +469,17 @@ aber_r0_list = np.concatenate([np.array([np.inf]),aber_r0_list_original])
 aber_z_list = np.concatenate([np.array([0]),aber_z_list_original])
 
 
-
-wvl = 500e-9
-aber_L0 = 8
-
-GL_r0 = 0.05
-MODE = 45 # 105 # 91 # 45 # 153
-
-r0_well_sampled_limit = 0.02
+hdu = fits.open('ATM_SEEDS.fits')
+ATM_SEEDS = hdu[0].data
+hdu.close()
+hdu = fits.open('aberration_seed.fits')
+aberation_seed = hdu[0].data
+hdu.close()
 
 
-original_name = 'bad_IM'
+
+
+
 original_sim = soapy.Sim(original_name + '.yaml')
 original_config = original_sim.config.configDict
 
@@ -476,8 +493,8 @@ name_list=[]
 
 FIRSTTIME = True
 
-if not os.path.exists(original_home + '/' + 'IMCC'):
-    os.makedirs(original_home + '/' + 'IMCC')
+if not os.path.exists(original_home + '/' + 'IMCC_' + original_name):
+    os.makedirs(original_home + '/' + 'IMCC_' + original_name)
 
 
 for i_aber_z_list in np.arange(len(aber_z_list)):
@@ -524,7 +541,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     # mode_list = np.arange(temp2 - 1 - 2) + 2 + 2#np.arange(91 - 1 - 2) + 2 + 2
     # MODE = mode_list.shape[0]
     # ATM_SEEDS = np.arange(TRIAL)
-    ATM_SEEDS = np.random.randint(0,2**31,size=TRIAL)
+    # ATM_SEEDS = np.random.randint(0,2**31,size=TRIAL)
     # ATM_SEEDS = np.array([1457885706],dtype=int)
     
 
@@ -542,11 +559,11 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
             new_config['DM'][idm]['subtype'] = 'Atmosphere_perfect_DM_no_tip_tilt'#'#'Zernike'#Zernike'#'Atmosphere'
             new_config['DM'][idm]['calibrate'] = True
             new_config['DM'][idm]['r0'] = float(aber_r0)
-            new_config['DM'][idm]['L0'] = float(aber_L0)
+            # new_config['DM'][idm]['L0'] = float(aber_L0)
             #new_config['DM'][idm]['nollMode'] = int(mode_list[-1])
             new_config['nIters'] = LOOP
             new_config['DM'][idm]['altitude'] = float(aberrationHeight)
-    
+
     
     
     new_name = new_config['simName']
@@ -573,7 +590,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     # else:
     #     SIM.config.wfss[0].plot = False
     # SIM.config.wfss[0].plot = True
-    SIM.config.wfss[0].plot = False
+    SIM.config.wfss[0].plot = PLOT
     
     perfect_SR = np.zeros((TRIAL,LOOP), dtype=float)
     perfect_WFE = np.zeros((TRIAL,LOOP), dtype=float)
@@ -594,30 +611,38 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     # make interation matrix
     
     
-    if not os.path.exists(original_home + '/IMCC/perfect_IM' + new_name + '.fits'):
+    if ((not os.path.exists(original_home + '/IMCC_' + original_name + '/perfect_IM' + new_name + '.fits'))
+        or newIMat):
         SIM.makeIMat(forceNew=True)
         hdu = fits.PrimaryHDU(np.asarray(SIM.recon.interaction_matrix,dtype=float))
         hdul = fits.HDUList([hdu])
-        hdul.writeto(original_home + '/IMCC/perfect_IM' + new_name  + '.fits', overwrite=True)
+        hdul.writeto(original_home + '/IMCC_' + original_name + '/perfect_IM' + new_name  + '.fits', overwrite=True)
         hdul.close()
         hdu = fits.PrimaryHDU(np.asarray(SIM.recon.control_matrix,dtype=float))
         hdul = fits.HDUList([hdu])
-        hdul.writeto(original_home + '/IMCC/perfect_CC' + new_name  + '.fits', overwrite=True)
+        hdul.writeto(original_home + '/IMCC_' + original_name + '/perfect_CC' + new_name  + '.fits', overwrite=True)
         hdul.close()
         hdu = fits.PrimaryHDU(np.asarray(SIM.recon.zero_iMat,dtype=float))
         hdul = fits.HDUList([hdu])
-        hdul.writeto(original_home + '/IMCC/perfect_zero_iMat' + new_name  + '.fits', overwrite=True)
+        hdul.writeto(original_home + '/IMCC_' + original_name + '/perfect_zero_iMat' + new_name  + '.fits', overwrite=True)
+        hdul.close()
+        hdu = fits.PrimaryHDU(np.asarray(SIM.recon.zero_iMat_intensity,dtype=float))
+        hdul = fits.HDUList([hdu])
+        hdul.writeto(original_home + '/IMCC_' + original_name + '/perfect_zero_iMat_intensity' + new_name  + '.fits', overwrite=True)
         hdul.close()
     else:
-        hdul = fits.open(original_home + '/IMCC/perfect_IM' + new_name  + '.fits')
+        hdul = fits.open(original_home + '/IMCC_' + original_name + '/perfect_IM' + new_name  + '.fits')
         TEMPIM = hdul[0].data
-        hdul = fits.open(original_home + '/IMCC/perfect_CC' + new_name  + '.fits')
+        hdul = fits.open(original_home + '/IMCC_' + original_name + '/perfect_CC' + new_name  + '.fits')
         TEMPCC = hdul[0].data
-        hdul = fits.open(original_home + '/IMCC/perfect_zero_iMat' + new_name  + '.fits')
+        hdul = fits.open(original_home + '/IMCC_' + original_name + '/perfect_zero_iMat' + new_name  + '.fits')
         TEMP0IM = hdul[0].data
+        hdul = fits.open(original_home + '/IMCC_' + original_name + '/perfect_zero_iMat_intensity' + new_name  + '.fits')
+        TEMP0IMI = hdul[0].data
         
-        SIM.makeIMat(forceNew=False,imat_to_load=TEMPIM,cmat_to_load=TEMPCC)
+        SIM.makeIMat(forceNew=False,imat_to_load=TEMPIM)#,cmat_to_load=TEMPCC)
         SIM.recon.zero_iMat = TEMP0IM
+        SIM.recon.zero_iMat_intensity = TEMP0IMI
     
     # save data
     perfect_IM = np.copy(SIM.recon.interaction_matrix)
@@ -641,7 +666,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
                     perfect_IM.shape[1],
                     perfect_IM.shape[0]),dtype=float)
     # aberation_seed = np.arange(TRIAL)
-    aberation_seed = np.random.randint(0,2**31,size=TRIAL)
+    # aberation_seed = np.random.randint(0,2**31,size=TRIAL)
     # aberation_seed = np.array([667518184],dtype=int)
 
     ABERATION_Z = np.zeros((TRIAL,
@@ -651,6 +676,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     ABERATION_PSD_phase = np.zeros((TRIAL,
                               PSD_size),dtype=float)
     ZERO_IMAT = np.zeros((TRIAL,perfect_IM.shape[1]),dtype=float)
+    ZERO_IMAT_intensity = np.zeros((TRIAL,perfect_IM.shape[1]),dtype=float)
     ATM_SLOPES = np.zeros((TRIAL,perfect_IM.shape[1]),dtype=float)
     
     SR = np.zeros((TRIAL,LOOP),dtype=float)
@@ -737,8 +763,9 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     
     #####################################################################
     
-    MEASURED_IM_RYTOV = np.zeros((TRIAL,SIM.dms[1].n_acts,SIM.wfss[0].n_subaps),dtype=float)
-    MEASURED_IM_SUBAP_SHIFT = np.zeros((TRIAL,SIM.dms[1].n_acts,SIM.wfss[0].n_subaps,2),dtype=float)
+    MEASURED_IM_RYTOV = np.zeros((TRIAL,SIM.dms[1].n_acts,SIM.wfss[0].n_subaps),dtype=float) # each trial, when poke each dm act, measure intensity in each wfs subap
+    MEASURED_IM_SUBAP_SHIFT_influence = np.zeros((TRIAL,SIM.dms[1].n_acts,1,2),dtype=float) # each trial, when poke each dm act, for each wfs, measure shift in dm act position, in two dimension
+    MEASURED_IM_SUBAP_SHIFT_slope = np.zeros((TRIAL,SIM.dms[1].n_acts,1,2),dtype=float) # each trial, 
     
     # RUNAWAY = np.zeros((TRIAL,4),dtype=bool)
     # RUNAWAY_POS = np.zeros((TRIAL,4),dtype=int)
@@ -754,10 +781,11 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
         #     SIM.config.wfss[0].plot = True
         # else:
         #     SIM.config.wfss[0].plot = False
-        SIM.config.wfss[0].plot = False
+        SIM.config.wfss[0].plot = PLOT
         print('')
         
-        if not os.path.exists(original_home + '/IMCC/IM' + new_name + '{}'.format(trial) + '.fits'):
+        if ((not os.path.exists(original_home + '/IMCC_' + original_name + '/IM' + new_name + '{}'.format(trial) + '.fits'))
+            or newIMat) :
             
             if ((SIM.config.dms[2].subtype == 'Atmosphere')
                 or (SIM.config.dms[2].subtype == 'Atmosphere_perfect_DM')
@@ -777,48 +805,67 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
             hdu = fits.PrimaryHDU(np.asarray(SIM.recon.interaction_matrix,dtype=float))
             hdul = fits.HDUList([hdu])
             hdu.header['SEED'] = aberation_seed[trial]
-            hdul.writeto(original_home + '/IMCC/IM' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/IM' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
             hdul.close()
             hdu = fits.PrimaryHDU(np.asarray(SIM.recon.control_matrix,dtype=float))
             hdul = fits.HDUList([hdu])
             hdu.header['SEED'] = aberation_seed[trial]
-            hdul.writeto(original_home + '/IMCC/CC' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/CC' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
             hdul.close()
             hdu = fits.PrimaryHDU(np.asarray(SIM.recon.zero_iMat,dtype=float))
             hdul = fits.HDUList([hdu])
             hdu.header['SEED'] = aberation_seed[trial]
-            hdul.writeto(original_home + '/IMCC/zero_iMat' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/zero_iMat' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.close()
+            hdu = fits.PrimaryHDU(np.asarray(SIM.recon.zero_iMat_intensity,dtype=float))
+            hdul = fits.HDUList([hdu])
+            hdu.header['SEED'] = aberation_seed[trial]
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/zero_iMat_intensity' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
             hdul.close()
             hdu = fits.PrimaryHDU(np.asarray(SIM.recon.dms[1].rytov,dtype=float))
             hdul = fits.HDUList([hdu])
             hdu.header['SEED'] = aberation_seed[trial]
-            hdul.writeto(original_home + '/IMCC/rytov' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/rytov' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
             hdul.close()
-            hdu = fits.PrimaryHDU(np.asarray(SIM.recon.dms[1].subapShift,dtype=float))
+            hdu = fits.PrimaryHDU(np.asarray(SIM.recon.dms[1].subapShift_influence,dtype=float))
             hdul = fits.HDUList([hdu])
             hdu.header['SEED'] = aberation_seed[trial]
-            hdul.writeto(original_home + '/IMCC/subapShift' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/subapShift_influence' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
+            hdul.close()
+            hdu = fits.PrimaryHDU(np.asarray(SIM.recon.dms[1].subapShift_slope,dtype=float))
+            hdul = fits.HDUList([hdu])
+            hdu.header['SEED'] = aberation_seed[trial]
+            hdul.writeto(original_home + '/IMCC_' + original_name + '/subapShift_slope' + new_name  + '{}'.format(trial) + '.fits', overwrite=True)
             hdul.close()
             
             # for idm in np.arange(SIM.config.sim.nDM):
             #     if not (SIM.config.dms[idm].type == 'Aberration'):
             #         hdu = fits.PrimaryHDU(np.asarray(SIM.dms[idm].valid_actuators,dtype=float))
             #         hdul = fits.HDUList([hdu])
-            #         hdul.writeto(original_home + '/IMCC/perfect_active_acts_dm{}'.format(idm) + new_name  + '.fits', overwrite=True)
+            #         hdul.writeto(original_home + '/IMCC_' + original_name + '/perfect_active_acts_dm{}'.format(idm) + new_name  + '.fits', overwrite=True)
             #         hdul.close()
                 
         else:
-            hdul = fits.open(original_home + '/IMCC/IM' + new_name  + '{}'.format(trial) + '.fits')
+            hdul = fits.open(original_home + '/IMCC_' + original_name + '/IM' + new_name  + '{}'.format(trial) + '.fits')
             TEMPIM = hdul[0].data
-            hdul = fits.open(original_home + '/IMCC/CC' + new_name  + '{}'.format(trial) + '.fits')
+            hdul = fits.open(original_home + '/IMCC_' + original_name + '/CC' + new_name  + '{}'.format(trial) + '.fits')
             TEMPCC = hdul[0].data
-            hdul = fits.open(original_home + '/IMCC/zero_iMat' + new_name  + '{}'.format(trial) + '.fits')
+            hdul = fits.open(original_home + '/IMCC_' + original_name + '/zero_iMat' + new_name  + '{}'.format(trial) + '.fits')
             TEMP0IM = hdul[0].data
-            hdul = fits.open(original_home + '/IMCC/rytov' + new_name  + '{}'.format(trial) + '.fits')
+            hdul = fits.open(original_home + '/IMCC_' + original_name + '/zero_iMat_intensity' + new_name  + '{}'.format(trial) + '.fits')
+            TEMP0IMI = hdul[0].data
+            hdul = fits.open(original_home + '/IMCC_' + original_name + '/rytov' + new_name  + '{}'.format(trial) + '.fits')
             TEMPrytov = hdul[0].data
-            hdul = fits.open(original_home + '/IMCC/subapShift' + new_name  + '{}'.format(trial) + '.fits')
-            TEMPsubapShift = hdul[0].data
-            
+            try:
+                hdul = fits.open(original_home + '/IMCC_' + original_name + '/subapShift_influence' + new_name  + '{}'.format(trial) + '.fits')
+                subapShift_influence = hdul[0].data
+                hdul = fits.open(original_home + '/IMCC_' + original_name + '/subapShift_slope' + new_name  + '{}'.format(trial) + '.fits')
+                subapShift_slope = hdul[0].data
+            except:
+                hdul = fits.open(original_home + '/IMCC_' + original_name + '/subapShift' + new_name  + '{}'.format(trial) + '.fits')
+                subapShift_influ = hdul[0].data
+                subapShift_slope = np.zeros_like(subapShift_influ)*np.nan
+                
             aberation_seed[trial] = hdul[0].header['SEED']
             
             if ((SIM.config.dms[2].subtype == 'Atmosphere')
@@ -835,11 +882,28 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
                 
             SIM.dms[2].makeDMFrame('shape')
             
-            SIM.makeIMat(forceNew=False,imat_to_load=TEMPIM,cmat_to_load=TEMPCC)
+            SIM.makeIMat(forceNew=False,imat_to_load=TEMPIM)#,cmat_to_load=TEMPCC)
             
             SIM.recon.zero_iMat = TEMP0IM
+            SIM.recon.zero_iMat_intensity = TEMP0IMI
             SIM.recon.dms[1].rytov = TEMPrytov
-            SIM.recon.dms[1].subapShift = TEMPsubapShift
+            try:
+                SIM.recon.dms[1].subapShift_influence = subapShift_influence
+                SIM.recon.dms[1].subapShift_slope = subapShift_slope
+            except:
+                SIM.recon.dms[1].subapShift_influence = np.nan
+                SIM.recon.dms[1].subapShift_slope = np.nan
+                
+        
+        if PLOT == True:
+            plt.imshow(SIM.recon.interaction_matrix)
+            plt.title('IM')
+            plt.colorbar()
+            plt.show()
+            plt.imshow(SIM.recon.control_matrix)
+            plt.title('CM')
+            plt.colorbar()
+            plt.show()
         
         atm_size1 = (SIM.dms[2].aberration.shape[0] - SIM.config.sim.pupilSize)//2
         atm_size2 = (SIM.dms[2].aberration.shape[0] + SIM.config.sim.pupilSize)//2
@@ -847,6 +911,7 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
         
         
         ZERO_IMAT[trial] = np.copy(SIM.recon.zero_iMat)
+        ZERO_IMAT_intensity[trial] = np.copy(SIM.recon.zero_iMat_intensity)
         
         # plt.imshow(SIM.dms[2].aberration)
         # plt.title('aber')
@@ -888,7 +953,11 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
         CC[trial] = np.copy(SIM.recon.control_matrix)
         
         MEASURED_IM_RYTOV[trial] = SIM.dms[1].rytov
-        MEASURED_IM_SUBAP_SHIFT[trial] = SIM.dms[1].subapShift
+        MEASURED_IM_SUBAP_SHIFT_influence[trial] = SIM.dms[1].subapShift_influence
+        MEASURED_IM_SUBAP_SHIFT_slope[trial] = SIM.dms[1].subapShift_slope
+        
+        
+        ###################################################################################
         
         for j in np.arange(SIM.atmos.scrns.shape[0]):
             SIM.atmos.infinite_phase_screens[j].random_seed = ATM_SEEDS[trial] + j
@@ -1617,6 +1686,13 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
         with open('data_space.txt', 'a') as outfile:
           outfile.write('ABERATION_slope' + '\n')
           
+    hdu = fits.PrimaryHDU(ZERO_IMAT_intensity)
+    hdul = fits.HDUList([hdu])
+    hdul.writeto('ABERATION_slope_intensity' + '_' + name  + '.fits', overwrite=True)
+    if FIRSTTIME == True:
+        with open('data_space.txt', 'a') as outfile:
+          outfile.write('ABERATION_slope_intensity' + '\n')
+          
           
     
     hdu = fits.PrimaryHDU(perfect_IM)
@@ -1664,14 +1740,21 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
           outfile.write('MEASURED_IM_RYTOV' + '\n')
     
     
-    hdu = fits.PrimaryHDU(MEASURED_IM_SUBAP_SHIFT)
+    hdu = fits.PrimaryHDU(MEASURED_IM_SUBAP_SHIFT_influence)
     hdul = fits.HDUList([hdu])
-    hdul.writeto('MEASURED_IM_SUBAP_SHIFT' + '_' + name  + '.fits', overwrite=True)
+    hdul.writeto('MEASURED_IM_SUBAP_SHIFT_influence' + '_' + name  + '.fits', overwrite=True)
     hdul.close()
     if FIRSTTIME == True:
         with open('data_space.txt', 'a') as outfile:
-          outfile.write('MEASURED_IM_SUBAP_SHIFT' + '\n')
-          
+          outfile.write('MEASURED_IM_SUBAP_SHIFT_influence' + '\n')
+    
+    hdu = fits.PrimaryHDU(MEASURED_IM_SUBAP_SHIFT_slope)
+    hdul = fits.HDUList([hdu])
+    hdul.writeto('MEASURED_IM_SUBAP_SHIFT_slope' + '_' + name  + '.fits', overwrite=True)
+    hdul.close()
+    if FIRSTTIME == True:
+        with open('data_space.txt', 'a') as outfile:
+          outfile.write('MEASURED_IM_SUBAP_SHIFT_slope' + '\n')
     
 
     #######################################################################

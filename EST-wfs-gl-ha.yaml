@@ -1,0 +1,14 @@
+mcaoName: EST-gl-ha
+
+pupilDiam: 4.2
+mcaoFov: 60
+
+nDM: 5
+dmHeight: [0,5000,9000,12000,20000]
+dmProjPitch: [0.084,0.232,0.333,0.259,0.334]
+
+wfsWvl: 500e-9
+wfsProjPitch: 8
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.07

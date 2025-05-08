@@ -1,0 +1,14 @@
+mcaoName: partyTime
+
+pupilDiam: 4
+mcaoFov: 2
+
+nDM: 2
+dmHeight: [10000,0]
+dmProjPitch: [0.035,0.035]
+
+wfsWvl: 350e-9
+wfsProjPitch: 0.035
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.035

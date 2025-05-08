@@ -1,8 +1,11 @@
-*.fits
-*.png
-*.pkl
 PhaseScreen/
-outputTestPhaseScreen/
 conf/
 __pycache__/
-*.Result
+.git/
+.ipynb_checkpoints/
+OldCodes/
+ThesisChapter4Plots/NoiseSHWFSSlopes
+ThesisChapter4Plots/profiling_result_IG_FT_new
+ThesisChapter4Plots/Data
+ThesisChapter5Plots/LastChapter5Data/conf/FinalSupreme/conf/Data
+

@@ -1,0 +1,14 @@
+mcaoName: NFIRAOS
+
+pupilDiam: 30
+mcaoFov: 120
+
+nDM: 2
+dmHeight: [0,11800]
+dmProjPitch: [0.40,0.484]
+
+wfsWvl: 589e-9
+wfsProjPitch: 0.50
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.19

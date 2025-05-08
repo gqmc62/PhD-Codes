@@ -1,0 +1,14 @@
+mcaoName: GeMS
+
+pupilDiam: 8
+mcaoFov: 120
+
+nDM: 3
+dmHeight: [0,4500,9000]
+dmProjPitch: [0.50,0.50,1.00]
+
+wfsWvl: 589e-9
+wfsProjPitch: 0.50
+
+turbProfileName: paranal-median.csv
+scaleToR0: 0.14

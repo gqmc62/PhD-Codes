@@ -1,0 +1,14 @@
+mcaoName: test
+
+pupilDiam: 0.4
+mcaoFov: 2
+
+nDM: 2
+dmHeight: [4000,0]
+dmProjPitch: [0.05,0.05]
+
+wfsWvl: 500e-9
+wfsProjPitch: 0.05
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.05

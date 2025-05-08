@@ -215,11 +215,18 @@ def old_displacement(wvl,dsub,r0,z):
     return displace
 
 def angle_of_arrival(wvl,dact_immediate_dm,r0,Dimmediate_dm,L0):
-    FACTOR1 = 0.17819635611424933
-    tiptilt_adjust = mps.tiptilt_variance_adjust_to_vK(dact_immediate_dm, np.min([Dimmediate_dm,L0]))
-    FACTOR = (FACTOR1*tiptilt_adjust)**0.5
-    alpha = np.sqrt(0.182 * wvl**2 * dact_immediate_dm**(-1./3.) * r0**(-5./3.))
-    alpha *= FACTOR
+    # FACTOR1 = 0.17819635611424933
+    # tiptilt_adjust = mps.tiptilt_variance_adjust_to_vK(dact_immediate_dm, np.min([Dimmediate_dm,L0]))
+    # FACTOR = (FACTOR1*tiptilt_adjust)**0.5
+    # alpha = np.sqrt(0.162 * wvl**2 * dact_immediate_dm**(-1./3.) * r0**(-5./3.))
+    grab_from_dact = 0.05
+    grab_from_Ddm = 0.4
+    if dact_immediate_dm != grab_from_dact:
+        return np.nan
+    if Dimmediate_dm != grab_from_Ddm:
+        return np.nan
+    alpha = 0.231232*(1/3600./360.*2.*np.pi)**2 * (wvl/500e-9)**2 * (r0/grab_from_dact)**(-5./3.)
+    # alpha *= FACTOR
     return alpha
 
 def displacement(wvl,dact_immediate_dm,dact_next_immediate_dm,r0,z,Dimmediate_dm,L0):

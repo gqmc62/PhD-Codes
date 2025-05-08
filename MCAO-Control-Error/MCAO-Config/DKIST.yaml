@@ -1,0 +1,14 @@
+mcaoName: DKIST
+
+pupilDiam: 4
+mcaoFov: 60
+
+nDM: 3
+dmHeight: [0,4000,11200]
+dmProjPitch: [0.093,0.12,0.27]
+
+wfsWvl: 550e-9
+wfsProjPitch: 0.093
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.09

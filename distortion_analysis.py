@@ -462,6 +462,7 @@ def rearrange1(A, position):
     return a
 
 def measure_AS_from_IM(IM,SHWFS_position,ACT_list,ACT_position,threshold):
+    debug= False
     position = SHWFS_position
 
     ACT_LIST = ACT_list
@@ -528,7 +529,7 @@ def measure_AS_from_IM(IM,SHWFS_position,ACT_list,ACT_position,threshold):
         WFS_MAP_X[WFS_MAP < threshold] = np.nan
         WFS_MAP_Y[WFS_MAP < threshold] = np.nan
         
-        MAX4 = np.sort(WFS_MAP[~np.isnan(WFS_MAP)].flatten())[-4:]
+        MAX4 = np.sort(WFS_MAP[~np.isnan(WFS_MAP)].flatten())#[-4:]
         
         WFS_MAP_X_MAX4 = np.zeros_like(WFS_MAP)
         WFS_MAP_Y_MAX4 = np.zeros_like(WFS_MAP)
@@ -549,22 +550,22 @@ def measure_AS_from_IM(IM,SHWFS_position,ACT_list,ACT_position,threshold):
             v_x[i] = WFS_MAP_X_MAX4[tuple(MAX4_POS[i])]
             v_y[i] = WFS_MAP_Y_MAX4[tuple(MAX4_POS[i])]
             
-        
-        # plt.quiver(WFS_GRID_X,WFS_GRID_Y,
-        #            WFS_MAP_X_MAX4,WFS_MAP_Y_MAX4,scale=5,color='r')
-        
-        # x_standard = np.linspace(WFS_GRID.min(),WFS_GRID.max())
-        # x = np.zeros((MAX4.shape[0],x_standard.shape[0]))
-        # y = np.zeros((MAX4.shape[0],x_standard.shape[0]),dtype=float)
-        # for i in np.arange(MAX4.shape[0]):
-        #     m = v_x[i]/v_y[i]
-        #     x[i] = x_standard
-        #     y[i] = m*(x[i] - MAX4_POS[i][0]) + MAX4_POS[i][1]
+        if debug:
+            plt.quiver(WFS_GRID_X,WFS_GRID_Y,
+                       WFS_MAP_X_MAX4,WFS_MAP_Y_MAX4,scale=5,color='r')
             
-        #     # y[i] = (x_standard*v_x[i] + MAX4_POS[i][1])
-        #     # x[i] = (x_standard*v_y[i] + MAX4_POS[i][0])
-        
-        #     # plt.plot(y[i],x[i],ls=':',color='b',marker='',alpha=0.5)
+            x_standard = np.linspace(WFS_GRID.min(),WFS_GRID.max())
+            x = np.zeros((MAX4.shape[0],x_standard.shape[0]))
+            y = np.zeros((MAX4.shape[0],x_standard.shape[0]),dtype=float)
+            for i in np.arange(MAX4.shape[0]):
+                m = v_x[i]/v_y[i]
+                x[i] = x_standard
+                y[i] = m*(x[i] - MAX4_POS[i][0]) + MAX4_POS[i][1]
+                
+                # y[i] = (x_standard*v_x[i] + MAX4_POS[i][1])
+                # x[i] = (x_standard*v_y[i] + MAX4_POS[i][0])
+            
+                # plt.plot(y[i],x[i],ls=':',color='b',marker='',alpha=0.5)
         
         cross = np.zeros((MAX4.shape[0],MAX4.shape[0],2),dtype=float)
         cross[:] = np.nan
@@ -602,38 +603,41 @@ def measure_AS_from_IM(IM,SHWFS_position,ACT_list,ACT_position,threshold):
                     cross[i,j,1] = np.nan
                     
                 else:
-                
-                    # plt.plot(cross[i,j,0],cross[i,j,1],marker='o',color='g')
-                    
-                    # plt.plot(y[i],x[i],ls=':',color='b',marker='')
-                    # plt.plot(y[j],x[j],ls=':',color='b',marker='')
-                    # plt.quiver(WFS_GRID_X,WFS_GRID_Y,
-                    #            WFS_MAP_X_MAX4,WFS_MAP_Y_MAX4,scale=5)
-                    # # plt.show()
-                    # # plt.plot(cen_x,cen_y,marker='x',color='b')
-                    # plt.axis('square')
-                    # plt.xlim(-0.5,7.5)
-                    # plt.ylim(-0.5,7.5)
-                    # plt.title(name_list[i_aber_z_list] + '\n'
-                    #     'act#{}'.format(act)
-                    #     +'\n{}{}'.format(i,j))
-                    # plt.show()
-                    size = (WFS_MAP_X[tuple(MAX4_POS[i])]**2
-                            + WFS_MAP_X[tuple(MAX4_POS[j])]**2)**0.5
-                    trustability[i,j] = size**2
+                    if debug:
+                        plt.plot(cross[i,j,0],cross[i,j,1],marker='o',color='g')
+                        
+                        plt.plot(y[i],x[i],ls=':',color='b',marker='')
+                        plt.plot(y[j],x[j],ls=':',color='b',marker='')
+                        plt.quiver(WFS_GRID_X,WFS_GRID_Y,
+                                   WFS_MAP_X_MAX4,WFS_MAP_Y_MAX4,scale=5)
+                        plt.plot(DM_POS[act,0],DM_POS[act,1],color='r',marker='o')
+                        # plt.show()
+                        # plt.plot(cen_x,cen_y,marker='x',color='b')
+                        # plt.axis('square')
+                        # plt.xlim(-0.5,7.5)
+                        # plt.ylim(-0.5,7.5)
+                        # plt.title(name_list[i_aber_z_list] + '\n'
+                        #     'act#{}'.format(act)
+                        #     +'\n{}{}'.format(i,j))
+                        # plt.show()
+                    size = ((WFS_MAP_X[tuple(MAX4_POS[i])]**2
+                             + WFS_MAP_X[tuple(MAX4_POS[j])]**2)**0.5
+                            * (WFS_MAP_Y[tuple(MAX4_POS[i])]**2
+                               + WFS_MAP_Y[tuple(MAX4_POS[j])]**2)**0.5)
+                    trustability[i,j] = size#**2
         
         cen_x = np.nansum(cross[...,0]*trustability)/np.nansum(trustability)
         cen_y = np.nansum(cross[...,1]*trustability)/np.nansum(trustability)
         
         CEN[act] = [cen_x - DM_POS[act,0], cen_y - DM_POS[act,1]]
-        
-        # plt.plot(cen_x,cen_y,marker='o',color='b')
-        # plt.axis('square')
-        # plt.xlim(-0.5,7.5)
-        # plt.ylim(-0.5,7.5)
-        # plt.title(name_list[i_aber_z_list] + '\n'
-        #     'act#{}'.format(act))
-        # plt.show()
+        if debug:
+            plt.plot(cen_x,cen_y,marker='o',color='b')
+            plt.axis('square')
+            plt.xlim(-0.5,7.5)
+            plt.ylim(-0.5,7.5)
+            # plt.title(name_list[i_aber_z_list] + '\n'
+            #     'act#{}'.format(act))
+            plt.show()
 
     return CEN
 
@@ -724,21 +728,21 @@ old_expect_AS = np.copy(expect_AS)
 
 
 
-###############################################################################
-# Sampling points
-##############################################################################
+# ###############################################################################
+# # Sampling points
+# ##############################################################################
 
-plt.plot(expect_rytov,old_expect_AS,marker='o',ls='',color='r')
-plt.xlabel('$\sigma_\chi^2$')
-plt.ylabel('AS (subap)')
-plt.title('Sampled points on previously thought spaces')
-# plt.legend()
-plt.xscale('log')
-plt.yscale('log')
-# plt.xlim(0.1,0.6)
-# plt.ylim(0.1,1.0)
-# plt.axis('square')
-plt.show()
+# plt.plot(expect_rytov,old_expect_AS,marker='o',ls='',color='r')
+# plt.xlabel('$\sigma_\chi^2$')
+# plt.ylabel('AS (subap)')
+# plt.title('Sampled points on previously thought spaces')
+# # plt.legend()
+# plt.xscale('log')
+# plt.yscale('log')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
+# # plt.axis('square')
+# plt.show()
 
 
 
@@ -787,37 +791,55 @@ for cases in np.arange(CASES):
 # original_MEASURED_IM_RYTOV = np.copy(MEASURED_IM_RYTOV)
 # MEASURED_IM_RYTOV[...,MASK==0] = np.nan
 
-###############################################################################
-# Parameter error
-###############################################################################
+# ###############################################################################
+# # Parameter error
+# ###############################################################################
+
+# old_MEASURED_IM_SUBAP_SHIFT = np.copy(MEASURED_IM_SUBAP_SHIFT)
+# old_temp = np.nanstd(MEASURED_IM_SUBAP_SHIFT,axis=(-1,-2,-3))#np.sqrt(np.nanmean(MEASURED_IM_SUBAP_SHIFT**2,axis=(-1,-2,-3)))
+# old_COMBINED_MEASURED_IM_AS = np.nanmean(old_temp,axis=-1)
+# old_COMBINED_MEASURED_IM_AS_error = np.nanstd(old_temp,axis=-1)
+
+# temp_rytov =  np.nanmean(MEASURED_IM_RYTOV,axis=(-1,-2))
+# COMBINED_MEASURED_IM_RYTOV = np.nanmean(temp_rytov,axis=(-1))
+# AS_R = np.nanstd(ANOTHER_AS,axis=(-1,-2))#np.sqrt(np.nanmean(ANOTHER_AS**2,axis=(-1,-2)))
+# COMBINED_MEASURED_IM_AS = np.nanmean(AS_R,axis=(-1))
 
 old_MEASURED_IM_SUBAP_SHIFT = np.copy(MEASURED_IM_SUBAP_SHIFT)
+old_temp = np.nanstd(MEASURED_IM_SUBAP_SHIFT,axis=(-1,-2,-3))#np.sqrt(np.nanmean(MEASURED_IM_SUBAP_SHIFT**2,axis=(-1,-2,-3)))
+old_COMBINED_MEASURED_IM_AS = np.nanmean(old_temp**2,axis=-1)**0.5
+old_COMBINED_MEASURED_IM_AS = (old_COMBINED_MEASURED_IM_AS**2-old_COMBINED_MEASURED_IM_AS[0]**2)**0.5
+old_COMBINED_MEASURED_IM_AS_error = np.nanstd(old_temp,axis=-1)
+old_COMBINED_MEASURED_IM_AS_error = (old_COMBINED_MEASURED_IM_AS_error**2 + old_COMBINED_MEASURED_IM_AS_error[0]**2)**0.5
 
 temp_rytov =  np.nanmean(MEASURED_IM_RYTOV,axis=(-1,-2))
-COMBINED_MEASURED_IM_RYTOV = np.nanmean(temp_rytov,axis=(-1))
-AS_R = np.sqrt(np.nanmean(ANOTHER_AS**2,axis=(-1,-2)))
-COMBINED_MEASURED_IM_AS = np.nanmean(AS_R,axis=(-1))
+COMBINED_MEASURED_IM_RYTOV = np.nanmean(temp_rytov**2,axis=(-1))**0.5
+COMBINED_MEASURED_IM_RYTOV = (COMBINED_MEASURED_IM_RYTOV**2 - COMBINED_MEASURED_IM_RYTOV[0]**2)**0.5
+AS_R = np.nanstd(ANOTHER_AS,axis=(-1,-2))#np.sqrt(np.nanmean(ANOTHER_AS**2,axis=(-1,-2)))
+COMBINED_MEASURED_IM_AS = np.nanmean(AS_R**2,axis=(-1))**0.5
+COMBINED_MEASURED_IM_AS = (COMBINED_MEASURED_IM_AS**2 - COMBINED_MEASURED_IM_AS[0]**2)**0.5
+
 
 error_rytov = np.nanstd(temp_rytov,axis=(-1))#/np.sqrt(2*(np.sum(~np.isnan(temp_rytov),axis=(-1))) - 2)
 error_as = np.nanstd(AS_R,axis=(-1))#/np.sqrt(2*(np.sum(~np.isnan(AS_R),axis=(-1))) - 2)
 
-plt.plot([expect_rytov[1:],COMBINED_MEASURED_IM_RYTOV[1:]],[old_expect_AS[1:],COMBINED_MEASURED_IM_AS[1:]],ls='-',marker='',color='k')
-plt.plot(expect_rytov[1:],old_expect_AS[1:],marker='o',ls='',color='r',label='Expected')
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV[1:],COMBINED_MEASURED_IM_AS[1:],
-             xerr=error_rytov[1:],yerr=error_as[1:],capsize=5,
-             ls='',marker='o',label='Measured')
-# plt.arrow(expect_rytov[1:],old_expect_AS[1:],
-#           (COMBINED_MEASURED_IM_RYTOV-expect_rytov)[1:],(COMBINED_MEASURED_IM_AS-old_expect_AS)[1:],
-#           ls='-',marker='',color='k')
-plt.xlabel('$\sigma_\chi^2$')
-plt.ylabel('AS (subap)')
-plt.xscale('log')
-plt.yscale('log')
-plt.title('before fixing error')
-plt.legend()
-# plt.xlim(0.1,0.6)
-# plt.ylim(0.1,1.0)
-plt.show()
+# plt.plot([expect_rytov[1:],COMBINED_MEASURED_IM_RYTOV[1:]],[old_expect_AS[1:],old_COMBINED_MEASURED_IM_AS[1:]],ls='-',marker='',color='k')
+# plt.plot(expect_rytov[1:],old_expect_AS[1:],marker='o',ls='',color='r',label='Expected')
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV[1:],old_COMBINED_MEASURED_IM_AS[1:],
+#              xerr=error_rytov[1:],yerr=old_COMBINED_MEASURED_IM_AS_error[1:],capsize=5,
+#              ls='',marker='o',label='Measured')
+# # plt.arrow(expect_rytov[1:],old_expect_AS[1:],
+# #           (COMBINED_MEASURED_IM_RYTOV-expect_rytov)[1:],(COMBINED_MEASURED_IM_AS-old_expect_AS)[1:],
+# #           ls='-',marker='',color='k')
+# plt.xlabel('$\sigma_\chi^2$')
+# plt.ylabel('AS (subap)')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.title('before fixing error')
+# plt.legend()
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
+# plt.show()
 
 
 
@@ -844,23 +866,23 @@ for cases in np.arange(CASES):
 
 
 
-plt.plot([expect_rytov[1:],COMBINED_MEASURED_IM_RYTOV[1:]],[expect_AS[1:],COMBINED_MEASURED_IM_AS[1:]],ls='-',marker='',color='k')
-plt.plot(expect_rytov[1:],expect_AS[1:],marker='o',ls='',color='r',label='Expected')
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV[1:],COMBINED_MEASURED_IM_AS[1:],
-         xerr=error_rytov[1:],yerr=error_as[1:],capsize=5,
-         ls='',marker='o',label='Measured')
-# plt.arrow(expect_rytov[1:],expect_AS[1:],
-#           (COMBINED_MEASURED_IM_RYTOV-expect_rytov)[1:],(COMBINED_MEASURED_IM_AS-expect_AS)[1:],
-#           ls='-',marker='',color='k')
-plt.xlabel('$\sigma_\chi^2$')
-plt.ylabel('AS (subap)')
-plt.xscale('log')
-plt.yscale('log')
-plt.legend()
-plt.title('after fixing model')
-# plt.xlim(0.1,0.6)
-# plt.ylim(0.01,1)
-plt.show()
+# plt.plot([expect_rytov[1:],COMBINED_MEASURED_IM_RYTOV[1:]],[expect_AS[1:],old_COMBINED_MEASURED_IM_AS[1:]],ls='-',marker='',color='k')
+# plt.plot(expect_rytov[1:],expect_AS[1:],marker='o',ls='',color='r',label='Expected')
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV[1:],old_COMBINED_MEASURED_IM_AS[1:],
+#          xerr=error_rytov[1:],yerr=old_COMBINED_MEASURED_IM_AS_error[1:],capsize=5,
+#          ls='',marker='o',label='Measured')
+# # plt.arrow(expect_rytov[1:],expect_AS[1:],
+# #           (COMBINED_MEASURED_IM_RYTOV-expect_rytov)[1:],(COMBINED_MEASURED_IM_AS-expect_AS)[1:],
+# #           ls='-',marker='',color='k')
+# plt.xlabel('$\sigma_\chi^2$')
+# plt.ylabel('AS (subap)')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.legend()
+# plt.title('after fixing model')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.01,1)
+# plt.show()
 
 ###############################################################################
 # Fixed Sampling point actual
@@ -899,6 +921,7 @@ plt.legend()
 plt.title('after fixing model true expected sampling point')
 plt.xlim(0.005,0.8)
 plt.ylim(0.005,0.3)
+plt.savefig('sampling_points.png')
 plt.show()
 
 
@@ -912,235 +935,237 @@ plt.show()
 
 
 
-# ###############################################################################
-# # IM error
-# ###############################################################################
+###############################################################################
+# IM error
+###############################################################################
 
-# TRIAL = IM.shape[1]
-# nACT = IM.shape[2]
-# nSUBAP = IM.shape[3]
+TRIAL = IM.shape[1]
+nACT = IM.shape[2]
+nSUBAP = IM.shape[3]
 
-# MAX =  perfect_IM[:,2:].max()
+MAX =  perfect_IM[:,2:].max()
 
-# perfect_IM /= MAX
-# IM /= MAX
+perfect_IM /= MAX
+IM /= IM.max()
 
-# threshold = 1/4. # selecting only the major strokes.
+threshold = 1/4. # selecting only the major strokes.
 
-# MASK = (np.abs(perfect_IM[0]) > threshold)
-# MASK[:2] = 0
+MASK = (np.abs(perfect_IM[0]) > threshold)
+MASK[:2] = 0
 
-# # plt.imshow(perfect_IM[0]*MASK)
-# # plt.show()
+# plt.imshow(perfect_IM[0]*MASK)
+# plt.show()
 
-# nMAINACT = (MASK == True).sum()
-# DIF = np.zeros((CASES,TRIAL,nMAINACT),dtype=float)
+nMAINACT = (MASK == True).sum()
+DIF = np.zeros((CASES,TRIAL,nMAINACT),dtype=float)
 
-# for cases in np.arange(CASES):
-#     for trial in np.arange(TRIAL):
-#         DIF[cases,trial] = (perfect_IM[cases] - IM[cases,trial])[MASK]
+for cases in np.arange(CASES):
+    for trial in np.arange(TRIAL):
+        DIF[cases,trial] = (perfect_IM[cases] - IM[cases,trial])[MASK]
         
-# DIF = np.asarray(DIF)
-# IM_RMS = np.sqrt(np.nanmean(DIF**2,axis=(1,2)))
+DIF = np.asarray(DIF)
+IM_RMS = np.sqrt(np.nanmean(DIF**2,axis=(1,2)))
 
+
+grid_rytov = np.unique(expect_rytov)
+grid_AS = np.unique(expect_AS)
+perfect_grid_IM_RMS = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+
+for cases in np.arange(CASES):
+    perfect_grid_IM_RMS[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = IM_RMS[cases]
+    
+perfect_grid_IM_RMS[perfect_grid_IM_RMS==0] = np.nan
+
+plt.contourf(grid_rytov,grid_AS,perfect_grid_IM_RMS.T)
+# plt.colorbar()
+CS = plt.contour(grid_rytov,grid_AS,perfect_grid_IM_RMS.T,colors='k')
+# plt.grid()
+# plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+# plt.xscale('log')
+# plt.yscale('log')
+plt.xlabel('$\sigma_\chi^2$')
+plt.ylabel('AS (subap)')
+plt.title('RMS error of Major Strokes of IM (normalized to max IM responses of major strokes)')
+plt.clabel(CS)
+# plt.legend()
+plt.xscale('log')
+plt.yscale('log')
+plt.xlim(0.005,0.8)
+plt.ylim(0.005,0.3)
+plt.savefig('IM_degrade.png')
+# plt.axis('square')
+plt.show()
+
+###############################################################################
+# CC error
+###############################################################################
+
+
+MAX = perfect_CC.max()
+CC /= MAX
+perfect_CC /= MAX
+
+threshold = 1/4. # selecting only the major strokes.
+
+MASK = (np.abs(perfect_CC[0]) > threshold)
+nMAINACT = (MASK == True).sum()
+
+CC_RMS = np.zeros((CASES),dtype=float)
+DIF = np.zeros((CASES,TRIAL,nMAINACT),dtype=float)
+for cases in np.arange(CASES):
+    for trial in np.arange(TRIAL):
+        DIF[cases,trial] = (perfect_CC[cases] - CC[cases,trial])[MASK]
+    CC_RMS = (np.nanmean(DIF**2,axis=(-1,-2)))**0.5
+    
+grid_rytov = np.unique(expect_rytov)
+grid_AS = np.unique(expect_AS)
+perfect_grid_CC_RMS = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+
+for cases in np.arange(CASES):
+    perfect_grid_CC_RMS[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = CC_RMS[cases]
+    
+perfect_grid_CC_RMS[perfect_grid_CC_RMS==0] = np.nan
+
+plt.contourf(grid_rytov,grid_AS,perfect_grid_CC_RMS.T)
+# plt.colorbar()
+CS = plt.contour(grid_rytov,grid_AS,perfect_grid_CC_RMS.T,colors='k')
+# plt.grid()
+# plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+plt.xlabel('$\sigma_\chi^2$')
+plt.ylabel('AS (subap)')
+# plt.xscale('log')
+# plt.yscale('log')
+plt.title('RMS error of Major CC Elements (normalized to max undistorted CC)')
+plt.clabel(CS)
+# plt.legend()
+plt.xscale('log')
+plt.yscale('log')
+plt.xlim(0.005,0.8)
+plt.ylim(0.005,0.3)
+plt.savefig('CM_degrade.png')
+# plt.axis('square')
+plt.show()
+
+# for i in np.arange(CASES):
+#     for j in np.arange(TRIAL):
+#         # if RUNAWAY[i,j,0] == 1:
+#         # plt.imshow(np.unwrap(np.unwrap(
+#         #     np.angle(crop_inscribed_square(
+#         #     perfect_RES_1_open[i,0,j]+1j*perfect_RES_1_open[i,1,j]))
+#         #     , axis=0), axis=1))
+#         # plt.colorbar()
+#         # plt.title('no distortion open{},{}'.format(i,j))
+#         # plt.show()
+#         plt.imshow(np.unwrap(np.unwrap(
+#             np.angle(crop_inscribed_square(
+#             perfect_RES[i,0,j,-1]+1j*perfect_RES[i,1,j,-1]))
+#             , axis=0), axis=1))
+#         plt.colorbar()
+#         plt.title('no distortion close{},{}'.format(i,j))
+#         plt.show()
+#         # plt.imshow(np.unwrap(np.unwrap(
+#         #     np.angle(crop_inscribed_square(
+#         #     RES_1_open[i,0,j]+1j*RES_1_open[i,1,j]))
+#         #     , axis=0), axis=1))
+#         # plt.colorbar()
+#         # plt.title('distorted open{},{}'.format(i,j))
+#         # plt.show()
+#         plt.imshow(np.unwrap(np.unwrap(
+#             np.angle(crop_inscribed_square(
+#             RES[i,0,j,-1]+1j*RES[i,1,j,-1]))
+#             , axis=0), axis=1))
+#         plt.colorbar()
+#         plt.title('distorted close{},{}'.format(i,j))
+#         plt.show()
+
+# for i in np.arange(23):
+#     for j in np.arange(10):
+#             plt.imshow(np.unwrap(np.unwrap(np.angle(crop_inscribed_square(
+#                 RES_1_open[i,0,j]+1j*RES_1_open[i,1,j]))
+#                 ,axis=-1),axis=-2))
+#             plt.colorbar()
+#             plt.title('{},{}'.format(i,j))
+#             plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ###############################################################################
+# # Control SR
+# ###############################################################################
+
+# perfect_avg_terminal_SR = np.nanmean(perfect_SR[:,:,-1],axis=-1)
 
 # grid_rytov = np.unique(expect_rytov)
 # grid_AS = np.unique(expect_AS)
-# perfect_grid_IM_RMS = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+# perfect_grid_SR = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
 
 # for cases in np.arange(CASES):
-#     perfect_grid_IM_RMS[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = IM_RMS[cases]
+#     perfect_grid_SR[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = perfect_avg_terminal_SR[cases]
     
-# perfect_grid_IM_RMS[perfect_grid_IM_RMS==0] = np.nan
+# perfect_grid_SR[perfect_grid_SR==0] = np.nan
 
-# plt.contourf(grid_rytov,grid_AS,perfect_grid_IM_RMS.T)
+# plt.contourf(grid_rytov,grid_AS,perfect_grid_SR.T)
 # # plt.colorbar()
-# CS = plt.contour(grid_rytov,grid_AS,perfect_grid_IM_RMS.T,colors='k')
+# CS = plt.contour(grid_rytov,grid_AS,perfect_grid_SR.T,colors='k')
 # # plt.grid()
 # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# # plt.xscale('log')
-# # plt.yscale('log')
 # plt.xlabel('$\sigma_\chi^2$')
 # plt.ylabel('AS (subap)')
-# plt.title('RMS error of Major Strokes of IM (normalized to max IM responses of major strokes)')
+# plt.title('No distortion bench mark Strehl Ratio' + '\nNo distortion has {:.2f}'.format(perfect_grid_SR[0,0]))
 # plt.clabel(CS)
 # # plt.legend()
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.xlim(0.005,0.8)
-# plt.ylim(0.005,0.3)
+# # plt.xscale('log')
+# # plt.yscale('log')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
 # # plt.axis('square')
 # plt.show()
 
-# ###############################################################################
-# # CC error
-# ###############################################################################
-
-
-# MAX = perfect_CC.max()
-# CC /= MAX
-# perfect_CC /= MAX
-
-# threshold = 1/4. # selecting only the major strokes.
-
-# MASK = (np.abs(perfect_CC[0]) > threshold)
-# nMAINACT = (MASK == True).sum()
-
-# CC_RMS = np.zeros((CASES),dtype=float)
-# DIF = np.zeros((CASES,TRIAL,nMAINACT),dtype=float)
-# for cases in np.arange(CASES):
-#     for trial in np.arange(TRIAL):
-#         DIF[cases,trial] = (perfect_CC[cases] - CC[cases,trial])[MASK]
-#     CC_RMS = (np.nanmean(DIF**2,axis=(-1,-2)))**0.5
-    
+# perfect_avg_terminal_SR_std = np.nanstd(perfect_SR[:,:,-1],axis=-1)
 # grid_rytov = np.unique(expect_rytov)
 # grid_AS = np.unique(expect_AS)
-# perfect_grid_CC_RMS = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+# perfect_grid_SR_std = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
 
 # for cases in np.arange(CASES):
-#     perfect_grid_CC_RMS[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = CC_RMS[cases]
+#     perfect_grid_SR_std[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = perfect_avg_terminal_SR_std[cases]
     
-# perfect_grid_CC_RMS[perfect_grid_CC_RMS==0] = np.nan
+# perfect_grid_SR_std[perfect_grid_SR_std==0] = np.nan
 
-# plt.contourf(grid_rytov,grid_AS,perfect_grid_CC_RMS.T)
+# plt.contourf(grid_rytov,grid_AS,perfect_grid_SR_std.T)
 # # plt.colorbar()
-# CS = plt.contour(grid_rytov,grid_AS,perfect_grid_CC_RMS.T,colors='k')
+# CS = plt.contour(grid_rytov,grid_AS,perfect_grid_SR_std.T,colors='k')
 # # plt.grid()
 # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
 # plt.xlabel('$\sigma_\chi^2$')
 # plt.ylabel('AS (subap)')
-# # plt.xscale('log')
-# # plt.yscale('log')
-# plt.title('RMS error of Major CC Elements (normalized to max undistorted CC)')
+# plt.title('No distortion bench mark std Strehl Ratio' + '\nNo distortion has {:.2f}'.format(perfect_grid_SR_std[0,0]))
 # plt.clabel(CS)
 # # plt.legend()
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.xlim(0.005,0.8)
-# plt.ylim(0.005,0.3)
+# # plt.xscale('log')
+# # plt.yscale('log')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
 # # plt.axis('square')
 # plt.show()
 
-# # for i in np.arange(CASES):
-# #     for j in np.arange(TRIAL):
-# #         # if RUNAWAY[i,j,0] == 1:
-# #         # plt.imshow(np.unwrap(np.unwrap(
-# #         #     np.angle(crop_inscribed_square(
-# #         #     perfect_RES_1_open[i,0,j]+1j*perfect_RES_1_open[i,1,j]))
-# #         #     , axis=0), axis=1))
-# #         # plt.colorbar()
-# #         # plt.title('no distortion open{},{}'.format(i,j))
-# #         # plt.show()
-# #         plt.imshow(np.unwrap(np.unwrap(
-# #             np.angle(crop_inscribed_square(
-# #             perfect_RES[i,0,j,-1]+1j*perfect_RES[i,1,j,-1]))
-# #             , axis=0), axis=1))
-# #         plt.colorbar()
-# #         plt.title('no distortion close{},{}'.format(i,j))
-# #         plt.show()
-# #         # plt.imshow(np.unwrap(np.unwrap(
-# #         #     np.angle(crop_inscribed_square(
-# #         #     RES_1_open[i,0,j]+1j*RES_1_open[i,1,j]))
-# #         #     , axis=0), axis=1))
-# #         # plt.colorbar()
-# #         # plt.title('distorted open{},{}'.format(i,j))
-# #         # plt.show()
-# #         plt.imshow(np.unwrap(np.unwrap(
-# #             np.angle(crop_inscribed_square(
-# #             RES[i,0,j,-1]+1j*RES[i,1,j,-1]))
-# #             , axis=0), axis=1))
-# #         plt.colorbar()
-# #         plt.title('distorted close{},{}'.format(i,j))
-# #         plt.show()
-
-# # for i in np.arange(23):
-# #     for j in np.arange(10):
-# #             plt.imshow(np.unwrap(np.unwrap(np.angle(crop_inscribed_square(
-# #                 RES_1_open[i,0,j]+1j*RES_1_open[i,1,j]))
-# #                 ,axis=-1),axis=-2))
-# #             plt.colorbar()
-# #             plt.title('{},{}'.format(i,j))
-# #             plt.show()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # ###############################################################################
-# # # Control SR
-# # ###############################################################################
-
-# # perfect_avg_terminal_SR = np.nanmean(perfect_SR[:,:,-1],axis=-1)
-
-# # grid_rytov = np.unique(expect_rytov)
-# # grid_AS = np.unique(expect_AS)
-# # perfect_grid_SR = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
-
-# # for cases in np.arange(CASES):
-# #     perfect_grid_SR[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = perfect_avg_terminal_SR[cases]
-    
-# # perfect_grid_SR[perfect_grid_SR==0] = np.nan
-
-# # plt.contourf(grid_rytov,grid_AS,perfect_grid_SR.T)
-# # # plt.colorbar()
-# # CS = plt.contour(grid_rytov,grid_AS,perfect_grid_SR.T,colors='k')
-# # # plt.grid()
-# # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# # plt.xlabel('$\sigma_\chi^2$')
-# # plt.ylabel('AS (subap)')
-# # plt.title('No distortion bench mark Strehl Ratio' + '\nNo distortion has {:.2f}'.format(perfect_grid_SR[0,0]))
-# # plt.clabel(CS)
-# # # plt.legend()
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # # plt.xlim(0.1,0.6)
-# # # plt.ylim(0.1,1.0)
-# # # plt.axis('square')
-# # plt.show()
-
-# # perfect_avg_terminal_SR_std = np.nanstd(perfect_SR[:,:,-1],axis=-1)
-# # grid_rytov = np.unique(expect_rytov)
-# # grid_AS = np.unique(expect_AS)
-# # perfect_grid_SR_std = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
-
-# # for cases in np.arange(CASES):
-# #     perfect_grid_SR_std[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = perfect_avg_terminal_SR_std[cases]
-    
-# # perfect_grid_SR_std[perfect_grid_SR_std==0] = np.nan
-
-# # plt.contourf(grid_rytov,grid_AS,perfect_grid_SR_std.T)
-# # # plt.colorbar()
-# # CS = plt.contour(grid_rytov,grid_AS,perfect_grid_SR_std.T,colors='k')
-# # # plt.grid()
-# # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# # plt.xlabel('$\sigma_\chi^2$')
-# # plt.ylabel('AS (subap)')
-# # plt.title('No distortion bench mark std Strehl Ratio' + '\nNo distortion has {:.2f}'.format(perfect_grid_SR_std[0,0]))
-# # plt.clabel(CS)
-# # # plt.legend()
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # # plt.xlim(0.1,0.6)
-# # # plt.ylim(0.1,1.0)
-# # # plt.axis('square')
-# # plt.show()
-
-
-
-# ###############################################################################
-# # Control WFE
-# ###############################################################################
+###############################################################################
+# Control WFE
+###############################################################################
 
 # perfect_avg_terminal_WFE = np.nanmean(perfect_WFE[:,:,-1],axis=-1)
 # # expect_rytov
@@ -1219,70 +1244,70 @@ plt.show()
 
 
 
-# ###############################################################################
-# # Drop in SR
-# ###############################################################################
+###############################################################################
+# Drop in SR
+###############################################################################
 
 
 
-# # avg_terminal_SR = np.nanmean(SR[:,:,-1],axis=-1)
+# avg_terminal_SR = np.nanmean(SR[:,:,-1],axis=-1)
 
-# # grid_rytov = np.unique(expect_rytov)
-# # grid_AS = np.unique(expect_AS)
-# # grid_SR = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+# grid_rytov = np.unique(expect_rytov)
+# grid_AS = np.unique(expect_AS)
+# grid_SR = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
 
-# # for cases in np.arange(CASES):
-# #     grid_SR[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_SR[cases]
+# for cases in np.arange(CASES):
+#     grid_SR[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_SR[cases]
     
-# # grid_SR[grid_SR==0] = np.nan
+# grid_SR[grid_SR==0] = np.nan
 
-# # plt.contourf(grid_rytov,grid_AS,grid_SR.T)
-# # # plt.colorbar()
-# # CS = plt.contour(grid_rytov,grid_AS,grid_SR.T,colors='k')
-# # # plt.grid()
-# # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# # plt.xlabel('$\sigma_\chi^2$')
-# # plt.ylabel('AS (subap)')
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # plt.title('Strehl Ratio' + '\nNo distortion has {:.2f}'.format(grid_SR[0,0]))
-# # plt.clabel(CS)
-# # # plt.legend()
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # # plt.xlim(0.1,0.6)
-# # # plt.ylim(0.1,1.0)
-# # # plt.axis('square')
-# # plt.show()
+# plt.contourf(grid_rytov,grid_AS,grid_SR.T)
+# # plt.colorbar()
+# CS = plt.contour(grid_rytov,grid_AS,grid_SR.T,colors='k')
+# # plt.grid()
+# # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+# plt.xlabel('$\sigma_\chi^2$')
+# plt.ylabel('AS (subap)')
+# # plt.xscale('log')
+# # plt.yscale('log')
+# plt.title('Strehl Ratio' + '\nNo distortion has {:.2f}'.format(grid_SR[0,0]))
+# plt.clabel(CS)
+# # plt.legend()
+# # plt.xscale('log')
+# # plt.yscale('log')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
+# # plt.axis('square')
+# plt.show()
 
-# # avg_terminal_SR_std = np.nanstd(SR[:,:,-1],axis=-1,ddof=1)
-# # grid_rytov = np.unique(expect_rytov)
-# # grid_AS = np.unique(expect_AS)
-# # grid_SR_std = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+# avg_terminal_SR_std = np.nanstd(SR[:,:,-1],axis=-1,ddof=1)
+# grid_rytov = np.unique(expect_rytov)
+# grid_AS = np.unique(expect_AS)
+# grid_SR_std = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
 
-# # for cases in np.arange(CASES):
-# #     grid_SR_std[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_SR_std[cases]
+# for cases in np.arange(CASES):
+#     grid_SR_std[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_SR_std[cases]
     
-# # grid_SR_std[grid_SR_std==0] = np.nan
+# grid_SR_std[grid_SR_std==0] = np.nan
 
-# # plt.contourf(grid_rytov,grid_AS,grid_SR_std.T)
-# # # plt.colorbar()
-# # CS = plt.contour(grid_rytov,grid_AS,grid_SR_std.T,colors='k')
-# # # plt.grid()
-# # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# # plt.xlabel('$\sigma_\chi^2$')
-# # plt.ylabel('AS (subap)')
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # plt.title('std Strehl Ratio' + '\nNo distortion has {:.2f}'.format(grid_SR_std[0,0]))
-# # plt.clabel(CS)
-# # # plt.legend()
-# # # plt.xscale('log')
-# # # plt.yscale('log')
-# # # plt.xlim(0.1,0.6)
-# # # plt.ylim(0.1,1.0)
-# # # plt.axis('square')
-# # plt.show()
+# plt.contourf(grid_rytov,grid_AS,grid_SR_std.T)
+# # plt.colorbar()
+# CS = plt.contour(grid_rytov,grid_AS,grid_SR_std.T,colors='k')
+# # plt.grid()
+# # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+# plt.xlabel('$\sigma_\chi^2$')
+# plt.ylabel('AS (subap)')
+# # plt.xscale('log')
+# # plt.yscale('log')
+# plt.title('std Strehl Ratio' + '\nNo distortion has {:.2f}'.format(grid_SR_std[0,0]))
+# plt.clabel(CS)
+# # plt.legend()
+# # plt.xscale('log')
+# # plt.yscale('log')
+# # plt.xlim(0.1,0.6)
+# # plt.ylim(0.1,1.0)
+# # plt.axis('square')
+# plt.show()
 
 
 # ###############################################################################
@@ -1361,58 +1386,64 @@ plt.show()
 # # plt.axis('square')
 # plt.show()
 
-# ###############################################################################
-# # only control error
-# ###############################################################################
+###############################################################################
+# only control error
+###############################################################################
 
 
 
-# avg_terminal_WFE_only_control = (np.nanmean(WFE[:,:,-1],axis=-1)**2 - np.nanmean(WFE[0,:,-1],axis=-1)**2)**0.5
-# # expect_rytov
-# # expect_AS
+avg_terminal_WFE_only_control = (np.nanmean(WFE[:,:,-1],axis=-1)**2 - np.nanmean(WFE[0,:,-1],axis=-1)**2)**0.5
+avg_terminal_WFE_only_control[np.isnan(avg_terminal_WFE_only_control)] = 0
+# expect_rytov
+# expect_AS
 
 
 
-# # plt.plot(expect_rytov,avg_terminal_SR,ls='',marker='o')
-# # plt.plot(expect_AS,avg_terminal_SR,ls='',marker='o')
+# plt.plot(expect_rytov,avg_terminal_SR,ls='',marker='o')
+# plt.plot(expect_AS,avg_terminal_SR,ls='',marker='o')
 
-# grid_rytov = np.unique(expect_rytov)
-# grid_AS = np.unique(expect_AS)
-# grid_WFE = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+grid_rytov = np.unique(expect_rytov)
+grid_AS = np.unique(expect_AS)
+grid_WFE = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+grid_WFE[:] = np.nan
 
-# for cases in np.arange(CASES):
-#     grid_WFE[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_WFE_only_control[cases]
+for cases in np.arange(CASES):
+    print(np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS))
+    grid_WFE[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = avg_terminal_WFE_only_control[cases]
     
 # grid_WFE[grid_WFE==0] = np.nan
 
 # TEMP = np.nanmax(grid_WFE)
 
-# plt.contourf(grid_rytov,grid_AS,grid_WFE.T)
-# # plt.colorbar()
-# CS = plt.contour(grid_rytov,grid_AS,grid_WFE.T,colors='k')
-# # plt.grid()
-# # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
-# plt.xlabel('$\sigma_\chi^2$')
-# plt.ylabel('AS (subap)')
-# # plt.xscale('log')
-# # plt.yscale('log')
-# plt.title('WFE (nm), excluding static error')
-# plt.clabel(CS)
-# # plt.legend()
+plt.contourf(grid_rytov,grid_AS,grid_WFE.T)
+# plt.colorbar()
+CS = plt.contour(grid_rytov,grid_AS,grid_WFE.T,colors='k')
+# plt.grid()
+# plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+plt.xlabel('$\sigma_\chi^2$')
+plt.ylabel('AS (subap)')
 # plt.xscale('log')
 # plt.yscale('log')
-# plt.xlim(0.005,0.8)
-# plt.ylim(0.005,0.3)
-# # plt.axis('square')
-# plt.show()
+plt.title('WFE (nm), excluding static error')
+plt.clabel(CS)
+# plt.legend()
+plt.xscale('log')
+plt.yscale('log')
+plt.xlim(0.005,0.8)
+plt.ylim(0.005,0.3)
+plt.savefig('control_WFE.png')
+# plt.axis('square')
+plt.show()
 
 # X = np.nanmean(WFE[:,:,-1],axis=-1)
 # Y = np.nanmean(WFE[0,:,-1],axis=-1)
 # sX = np.nanstd(WFE[:,:,-1],axis=-1)
 # sY = np.nanstd(WFE[0,:,-1],axis=-1)
 # Z = (X**2 - Y**2)**0.5
-# sZ = (X**2*sX**2+Y**2+sY**2)**0.5/Z
+# sZ = (X**2*sX**2+Y**2*sY**2)**0.5/Z
+# sZ[np.isnan(sZ)] = np.inf
 # error_avg_terminal_WFE_only_control = sZ
+
 # # expect_rytov
 # # expect_AS
 
@@ -1424,15 +1455,16 @@ plt.show()
 # grid_rytov = np.unique(expect_rytov)
 # grid_AS = np.unique(expect_AS)
 # grid_WFE = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
+# grid_WFE[:] = np.nan
 
 # for cases in np.arange(CASES):
 #     grid_WFE[np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS)] = error_avg_terminal_WFE_only_control[cases]
     
-# grid_WFE[grid_WFE==0] = np.nan
+# # grid_WFE[grid_WFE==0] = np.nan
 
-# plt.contourf(grid_rytov,grid_AS,grid_WFE.T/TEMP*100)
+# plt.contourf(grid_rytov,grid_AS,grid_WFE.T)
 # # plt.colorbar()
-# CS = plt.contour(grid_rytov,grid_AS,grid_WFE.T/TEMP*100,colors='k')
+# CS = plt.contour(grid_rytov,grid_AS,grid_WFE.T,colors='k')
 # # plt.grid()
 # # plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
 # plt.xlabel('$\sigma_\chi^2$')
@@ -1449,137 +1481,139 @@ plt.show()
 # # plt.axis('square')
 # plt.show()
 
-# ###############################################################################
-# # 
-# ###############################################################################
+###############################################################################
+# 
+###############################################################################
 
-# LOOP = perfect_RES_phase_Z.shape[2]
-# MODE = perfect_RES_phase_Z.shape[3]
-# # radial_modes = [( 0,),
-# #                 ( 1, 2),
-# #                 ( 3, 4, 5,),
-# #                 ( 6, 7, 8, 9,),
-# #                 (10,11,12,13,14,),
-# #                 (15,16,17,18,19,20,),
-# #                 (21,22,23,24,25,26,27,),
-# #                 (28,29,30,31,32,33,34,35,),
-# #                 (36,37,38,39,40,41,42,43,44,)]
+LOOP = perfect_RES_phase_Z.shape[2]
+MODE = perfect_RES_phase_Z.shape[3]
+# radial_modes = [( 0,),
+#                 ( 1, 2),
+#                 ( 3, 4, 5,),
+#                 ( 6, 7, 8, 9,),
+#                 (10,11,12,13,14,),
+#                 (15,16,17,18,19,20,),
+#                 (21,22,23,24,25,26,27,),
+#                 (28,29,30,31,32,33,34,35,),
+#                 (36,37,38,39,40,41,42,43,44,)]
 
-# x = []
-# y = np.arange(MODE)
-# number_of_radial = int(((1+8*MODE)**0.5-1)/2)
-# for i in np.arange(number_of_radial):
-#     x.append(tuple(y[int((i)*(i+1)//2):int((i+1)*(i+2)//2)]))
+x = []
+y = np.arange(MODE)
+number_of_radial = int(((1+8*MODE)**0.5-1)/2)
+for i in np.arange(number_of_radial):
+    x.append(tuple(y[int((i)*(i+1)//2):int((i+1)*(i+2)//2)]))
 
-# radial_modes = x
+radial_modes = x
 
-# RADIAL_MODES = len(radial_modes) - 1
+RADIAL_MODES = len(radial_modes) - 1
 
 
 
-# theory_noll = mps.von_Karman_noll_variance(MODE, D/pixel_scale, pixel_scale, 0.05, 5)
-# MAX = np.max(np.array([theory_noll.max(),
-#                        np.nanmean(ATM_Z,axis=1).max(),
-#                        np.nanmean(perfect_RES_phase_Z,axis=1).max(),
-#                        np.nanmean(RES_phase_Z,axis=1).max()]))*10
-# MAX = np.min(np.array([theory_noll.min(),
-#                        np.nanmean(ATM_Z,axis=1).min(),
-#                        np.nanmean(perfect_RES_phase_Z,axis=1).min(),
-#                        np.nanmean(RES_phase_Z,axis=1).min()]))/10
+theory_noll = mps.von_Karman_noll_variance(MODE, D/pixel_scale, pixel_scale, 0.05, 5)
+MAX = np.max(np.array([theory_noll.max(),
+                       np.nanmean(ATM_Z,axis=1).max(),
+                       np.nanmean(perfect_RES_phase_Z,axis=1).max(),
+                       np.nanmean(RES_phase_Z,axis=1).max()]))*10
+MAX = np.min(np.array([theory_noll.min(),
+                       np.nanmean(ATM_Z,axis=1).min(),
+                       np.nanmean(perfect_RES_phase_Z,axis=1).min(),
+                       np.nanmean(RES_phase_Z,axis=1).min()]))/10
 
-# for cases in np.arange(CASES):
+for cases in np.arange(CASES):
     
     
-#     plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T,
-#                   color='b',label='uncorrected')
-#     plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T + 2*np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T - 2*np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   alpha=0.2,color='b')
+    plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T,
+                  color='b',label='uncorrected')
+    plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T + 2*np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T - 2*np.var(ATM_Z[cases,:,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  alpha=0.2,color='b')
     
-#     plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T,
-#                   color='g',label='corrected - undistorted')
-#     plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T + 2*np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T - 2*np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   alpha=0.2,color='g')
+    plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T,
+                  color='g',label='corrected - undistorted')
+    plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T + 2*np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T - 2*np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  alpha=0.2,color='g')
     
-#     plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T,
-#                   color='r',label='corrected - distorted')
-#     plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
-#                   np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T+2*np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T-2*np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
-#                   alpha=0.2,color='r')
+    plt.plot(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T,
+                  color='r',label='corrected - distorted')
+    plt.fill_between(np.arange(MODE - 1 - 2) + 1 + 2,
+                  np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T+2*np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T-2*np.var(RES_phase_Z[cases,:,-1,3:],axis=(0),ddof=1).T/np.sqrt(2*ATM_Z.shape[1] - 2),
+                  alpha=0.2,color='r')
     
-#     plt.plot(np.arange(MODE) + 1,theory_noll,ls=':',color='k',label='theory')
+    plt.plot(np.arange(MODE) + 1,theory_noll,ls=':',color='k',label='theory')
     
-#     # plt.errorbar(np.arange(MODE - 1) + 1,
-#     #              np.abs(np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0)).T
-#     #                     - np.var(RES_phase_Z[cases,:,-1,3:],axis=(0)).T),
-#     #              yerr=2*(np.var(RES_phase_Z[cases,:,-1,3:],axis=(0)).T
-#     #                      + np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0)).T)/np.sqrt(2*ATM_Z.shape[1] - 2),
-#     #              capsize=5,color='m',label='difference between distorted and undistorted')
+    # plt.errorbar(np.arange(MODE - 1) + 1,
+    #              np.abs(np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0)).T
+    #                     - np.var(RES_phase_Z[cases,:,-1,3:],axis=(0)).T),
+    #              yerr=2*(np.var(RES_phase_Z[cases,:,-1,3:],axis=(0)).T
+    #                      + np.var(perfect_RES_phase_Z[cases,:,-1,3:],axis=(0)).T)/np.sqrt(2*ATM_Z.shape[1] - 2),
+    #              capsize=5,color='m',label='difference between distorted and undistorted')
     
-#     plt.yscale('log')
-#     # plt.title('terminal z-decomposition')
-#     plt.legend()
-#     plt.ylabel('variance of Z coefficients (rad$^2$)')
-#     plt.xlabel('Z-Modes')
-#     plt.title('Terminal Wavefront Residual Zernike Mode Decomposition\n' + name_list[cases])
-#     plt.show()
+    plt.yscale('log')
+    # plt.title('terminal z-decomposition')
+    plt.legend()
+    plt.ylabel('variance of Z coefficients (rad$^2$)')
+    plt.xlabel('Z-Modes')
+    plt.title('Terminal Wavefront Residual Zernike Mode Decomposition\n' + name_list[cases])
+    plt.savefig('z_decompose_{:d}.png'.format(cases))
+    plt.show()
     
 
 
 
 
-# PSD_phase_new = PSD_phase
-# perfect_PSD_phase_new = perfect_PSD_phase
-# PSD_phase_frequency_new = PSD_phase_frequency
+PSD_phase_new = PSD_phase/2
+perfect_PSD_phase_new = perfect_PSD_phase/2
+PSD_phase_frequency_new = PSD_phase_frequency
 
-# theory_psd = mps.psd_function(0.05,(PSD_phase_frequency_new.shape[1] + 1)*2,pixel_scale,L0,1e-10)
-# cross_section_theory_psd = theory_psd[theory_psd.shape[0]//2, theory_psd.shape[0]//2 + 1: ]
+theory_psd = mps.psd_function(0.05,(PSD_phase_frequency_new.shape[1] + 1)*2,pixel_scale,L0,1e-10)
+cross_section_theory_psd = theory_psd[theory_psd.shape[0]//2, theory_psd.shape[0]//2 + 1: ]
 
-# # MAX = cross_section_theory_psd.max()*10
-# # MIN = cross_section_theory_psd.min()/10  
-# MAX = np.max(np.array([cross_section_theory_psd.max(),np.nanmean(perfect_PSD_phase_new,axis=1).max(),np.nanmean(PSD_phase_new,axis=1).max()]))*10
-# MIN = np.min(np.array([cross_section_theory_psd.min(),np.nanmean(perfect_PSD_phase_new,axis=1).min(),np.nanmean(PSD_phase_new,axis=1).min()]))/10
-# for cases in np.arange(CASES):
+# MAX = cross_section_theory_psd.max()*10
+# MIN = cross_section_theory_psd.min()/10  
+MAX = np.max(np.array([cross_section_theory_psd.max(),np.nanmean(perfect_PSD_phase_new,axis=1).max(),np.nanmean(PSD_phase_new,axis=1).max()]))*10
+MIN = np.min(np.array([cross_section_theory_psd.min(),np.nanmean(perfect_PSD_phase_new,axis=1).min(),np.nanmean(PSD_phase_new,axis=1).min()]))/10
+for cases in np.arange(CASES):
     
-#     # plt.errorbar(PSD_phase_frequency[cases],
-#     #              np.nanmean(PSD_phase[cases,:,-1],axis=0),
-#     #              yerr=np.nanstd(PSD_phase[cases,:,-1],axis=0)/np.sqrt(2*PSD_phase.shape[1]-2),
-#     #              label='distorted control',color='r',capsize=5)
-#     # plt.errorbar(PSD_phase_frequency[cases],
-#     #              np.nanmean(perfect_PSD_phase[cases,:,-1],axis=0),
-#     #              yerr=np.nanstd(perfect_PSD_phase[cases,:,-1],axis=0)/np.sqrt(2*perfect_PSD_phase.shape[1]-2),
-#     #              label='non-distorted control',color='g',capsize=5)
-#     plt.fill_between(PSD_phase_frequency_new[cases],
-#                  np.nanmean(PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*PSD_phase_new.shape[1]-2),
-#                  np.nanmean(PSD_phase_new[cases,:,-1],axis=0) - np.nanstd(PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*PSD_phase_new.shape[1]-2),
-#                  color='r',alpha=0.2)
-#     plt.fill_between(PSD_phase_frequency_new[cases],
-#                  np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
-#                  np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) - np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
-#                  color='g',alpha=0.2)
-#     plt.plot(PSD_phase_frequency_new[cases],
-#                  np.nanmean(PSD_phase_new[cases,:,-1],axis=0),
-#                  label='distorted control',color='r')
-#     plt.plot(PSD_phase_frequency_new[cases],
-#                  np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0),
-#                  label='non-distorted control',color='g')
-#     plt.plot(PSD_phase_frequency_new[cases],cross_section_theory_psd,label='no correction',color='k',ls=':')
-#     plt.vlines(20,MIN,MAX,label='AO Spatial Frequency')
-#     plt.xscale('log')
-#     plt.yscale('log')
-#     plt.ylim(MIN,MAX)
-#     plt.legend()
-#     plt.title(name_list[cases])
-#     plt.xlabel('spatial frequency (1/m)')
-#     plt.ylabel('PSD of phase (rad$^2$ m$^2$)')
-#     plt.show()
+    # plt.errorbar(PSD_phase_frequency[cases],
+    #              np.nanmean(PSD_phase[cases,:,-1],axis=0),
+    #              yerr=np.nanstd(PSD_phase[cases,:,-1],axis=0)/np.sqrt(2*PSD_phase.shape[1]-2),
+    #              label='distorted control',color='r',capsize=5)
+    # plt.errorbar(PSD_phase_frequency[cases],
+    #              np.nanmean(perfect_PSD_phase[cases,:,-1],axis=0),
+    #              yerr=np.nanstd(perfect_PSD_phase[cases,:,-1],axis=0)/np.sqrt(2*perfect_PSD_phase.shape[1]-2),
+    #              label='non-distorted control',color='g',capsize=5)
+    plt.fill_between(PSD_phase_frequency_new[cases],
+                 np.nanmean(PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*PSD_phase_new.shape[1]-2),
+                 np.nanmean(PSD_phase_new[cases,:,-1],axis=0) - np.nanstd(PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*PSD_phase_new.shape[1]-2),
+                 color='r',alpha=0.2)
+    plt.fill_between(PSD_phase_frequency_new[cases],
+                 np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
+                 np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) - np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
+                 color='g',alpha=0.2)
+    plt.plot(PSD_phase_frequency_new[cases],
+                 np.nanmean(PSD_phase_new[cases,:,-1],axis=0),
+                 label='distorted control',color='r')
+    plt.plot(PSD_phase_frequency_new[cases],
+                 np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0),
+                 label='non-distorted control',color='g')
+    plt.plot(PSD_phase_frequency_new[cases],cross_section_theory_psd,label='no correction',color='k',ls=':')
+    plt.vlines(20/2,MIN,MAX,label='AO Nyquist Spatial Frequency')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.ylim(MIN,MAX)
+    plt.legend()
+    plt.title(name_list[cases])
+    plt.xlabel('spatial frequency (1/m)')
+    plt.ylabel('PSD of phase (rad$^2$ m$^2$)')
+    plt.savefig('psd-phase-{:d}.png'.format(cases))
+    plt.show()
     
     
     
@@ -1589,7 +1623,7 @@ plt.show()
     
 # PSD_phase_new = PSD_intensity / 2.
 # perfect_PSD_phase_new = perfect_PSD_intensity / 2.
-# PSD_phase_frequency_new = PSD_phase_frequency *2# * np.sqrt(2)
+# PSD_phase_frequency_new = PSD_phase_frequency# * np.sqrt(2)
 
 # # theory_psd = mps.psd_function(0.05,(PSD_phase_frequency_new.shape[1] + 1)*2,pixel_scale,L0,1e-10)
 # # cross_section_theory_psd = theory_psd[theory_psd.shape[0]//2, theory_psd.shape[0]//2 + 1: ]
@@ -1642,36 +1676,136 @@ plt.show()
     
     
     
-# # for cases in np.arange(CASES):
-# #     for i in np.arange(3,10):#45):
-# #         plt.plot(np.abs(ABERATION_Z[cases,:,i]),SR[cases,:,-1],ls='',marker='.')
-# #         plt.title('intermediate dm z mode strength compare to strehl ratio' + '\n' + name_list[cases] + ', Z-{}'.format(i))
-# #         plt.xlabel('z ampitude')
-# #         plt.ylabel('strehl')
-# #         plt.show()
+# for cases in np.arange(CASES):
+#     for i in np.arange(3,10):#45):
+#         plt.plot(np.abs(ABERATION_Z[cases,:,i]),SR[cases,:,-1],ls='',marker='.')
+#         plt.title('intermediate dm z mode strength compare to strehl ratio' + '\n' + name_list[cases] + ', Z-{}'.format(i))
+#         plt.xlabel('z ampitude')
+#         plt.ylabel('strehl')
+#         plt.show()
 
-# MIN = np.nanmin(WFE)
-# MAX = np.nanmax(WFE)
-# xMIN = np.nanmin(np.abs(ABERATION_Z))
-# xMAX = np.nanmax(np.abs(ABERATION_Z))
+MIN = np.nanmin(WFE)
+MAX = np.nanmax(WFE)
+xMIN = np.nanmin(np.abs(ABERATION_Z))
+xMAX = np.nanmax(np.abs(ABERATION_Z))
         
-# # for cases in np.arange(CASES):
-# #     for i in np.arange(3,10):#45):
-# #         plt.plot(np.abs(ABERATION_Z[cases,:,i]),WFE[cases,:,-1],ls='',marker='.')
-# #         plt.title('intermediate dm z mode strength compare to WFE' + '\n' + name_list[cases] + ', Z-{}'.format(i))
-# #         plt.xlabel('z ampitude')
-# #         plt.ylabel('WFE (nm)')
-# #         plt.ylim(MIN,MAX)
-# #         plt.xlim(xMIN,xMAX)
-# #         plt.show()        
+# for cases in np.arange(CASES):
+#     for i in np.arange(3,10):#45):
+#         plt.plot(np.abs(ABERATION_Z[cases,:,i]),WFE[cases,:,-1],ls='',marker='.')
+#         plt.title('intermediate dm z mode strength compare to WFE' + '\n' + name_list[cases] + ', Z-{}'.format(i))
+#         plt.xlabel('z ampitude')
+#         plt.ylabel('WFE (nm)')
+#         plt.ylim(MIN,MAX)
+#         plt.xlim(xMIN,xMAX)
+#         plt.show()        
     
-    
+
+from scipy.optimize import curve_fit
+def linear(x,m,c):
+    return m*x + c
+# import scipy.stats.linregress as linregress
+
 # for i in np.arange(3,10):
-#     plt.plot(np.abs(ABERATION_Z[...,i].flatten()),WFE[...,-1].flatten(),marker='.',ls='',label='{:d}'.format(i))
+#     A = np.abs(ABERATION_Z[...,i].flatten())
+#     B = WFE[...,-1].flatten()
+#     plt.plot(A,B,marker='.',ls='',label='{:d}'.format(i),alpha=0.1)
 #     # plt.xscale('log')
 #     # plt.yscale('log')
+#     fit_res = curve_fit(linear,A,B)
+#     fit = linear(A,fit_res[0][0],fit_res[0][1])
+#     plt.plot(A,fit)
 #     plt.legend()
 #     plt.show()
+#     (1 - (B-fit).std() / B.std())*100
+    
+correlate = np.zeros((ABERATION_Z.shape[-1]),dtype=float)
+for i in np.arange(3,ABERATION_Z.shape[-1]):
+    A = np.abs(ABERATION_Z[...,i].flatten())
+    B = WFE[...,-1].flatten()
+    fit_res = curve_fit(linear,A,B)
+    fit = linear(A,fit_res[0][0],fit_res[0][1])
+    correlate[i] = 1 - ((B - fit)**2).sum() / ((B - B.mean())**2).sum()
+    # correlate[i] = np.mean((A - A.mean())*(B - B.mean())) / A.std() / B.std()
+    
+plt.plot(np.arange(3,ABERATION_Z.shape[-1]),correlate[3:ABERATION_Z.shape[-1]],marker='.',ls='',label='{:d}'.format(i))
+plt.xlabel('zernike mode')
+plt.ylabel('R2 of linear fit')
+plt.title('good ness of linear fit between zernike mode strength of intermediate dm to residual WFE')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.legend()
+plt.savefig('no-correlation.png')
+plt.show()
+
+
+
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+ax2 = ax1.twiny()
+
+ax1.set_xlim(1e-15,r02cn2dz(0.02))
+ax2.set_ylim(1,30)
+
+r0_mark = np.array([5,2,1,0.5,0.2,0.1,0.05,0.02])*100
+new_tick_locations = np.log10(r02cn2dz(r0_mark)) + 15
+ax2.set_xlim(ax1.get_xlim())
+ax2.set_xticks(new_tick_locations)
+labels = []
+for i in np.arange(r0_mark.shape[0]):
+  labels.append('{:.0f}'.format(r0_mark[i]))
+ax2.set_xticklabels(labels)
+
+ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
+ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
+ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
+
+x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
+y = np.logspace(np.log10(1),np.log10(30))
+
+yy, xx = np.meshgrid(y,x)
+
+
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+#ax1.set_yscale('squareroot')
+
+ax1.grid()
+ax2.grid()
+
+# ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
+
+dact_immediate_dm = 0.05
+dact_next_immediate_dm = 0.05
+Dimmediate_dm = 0.4
+L0 = 5
+wvl = 500e-9
+
+RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
+APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
+
+CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
+ax1.clabel(CS)
+CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
+ax1.clabel(CS2)
+# plt.legend()
+
+TOPLOT = np.copy(avg_terminal_WFE_only_control)
+
+cmap = plt.colormaps["viridis"]
+for i in np.arange(r0HA.size):
+    ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/np.nanmax(TOPLOT)))
+# ax1.tripcolor(r02cn2dz(r0HA),z/1000,TOPLOT)
+# ax1.tricontour(r02cn2dz(r0HA),z/1000,TOPLOT)
+
+
+fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(TOPLOT)),cmap=cmap),ax=ax1)
+fig.suptitle('WFE from distorted control error after 5 iterations  (nm)')
+
+plt.gcf().set_size_inches(8,8)
+plt.savefig('control-error-2.png')
+plt.show()
+
 
 
 
@@ -1725,17 +1859,15 @@ plt.show()
 # ax1.clabel(CS2)
 # # plt.legend()
 
-# TOPLOT = np.copy(avg_terminal_WFE_only_control)
+# TOPLOT = np.copy(avg_terminal_SR)#np.copy(avg_terminal_WFE_only_control)
 
 # cmap = plt.colormaps["viridis"]
 # for i in np.arange(r0HA.size):
 #     ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/np.nanmax(TOPLOT)))
-# # ax1.tripcolor(r02cn2dz(r0HA),z/1000,TOPLOT)
-# # ax1.tricontour(r02cn2dz(r0HA),z/1000,TOPLOT)
 
 
 # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(TOPLOT)),cmap=cmap),ax=ax1)
-# fig.suptitle('WFE from distorted control error after 5 iterations  (nm)')
+# fig.suptitle('Terminal Strehl ratio at 500 nm')
 
 # plt.gcf().set_size_inches(8,8)
 # plt.show()
@@ -1743,176 +1875,112 @@ plt.show()
 
 
 
-# # fig = plt.figure()
-# # ax1 = fig.add_subplot(111)
-# # ax2 = ax1.twiny()
 
-# # ax1.set_xlim(1e-15,r02cn2dz(0.02))
-# # ax2.set_ylim(1,30)
+# fig = plt.figure()
+# ax1 = fig.add_subplot(111)
+# ax2 = ax1.twiny()
 
-# # r0_mark = np.array([5,2,1,0.5,0.2,0.1,0.05,0.02])*100
-# # new_tick_locations = np.log10(r02cn2dz(r0_mark)) + 15
-# # ax2.set_xlim(ax1.get_xlim())
-# # ax2.set_xticks(new_tick_locations)
-# # labels = []
-# # for i in np.arange(r0_mark.shape[0]):
-# #   labels.append('{:.0f}'.format(r0_mark[i]))
-# # ax2.set_xticklabels(labels)
+# ax1.set_xlim(1e-15,r02cn2dz(0.02))
+# ax2.set_ylim(1,30)
 
-# # ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
-# # ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
-# # ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
+# r0_mark = np.array([5,2,1,0.5,0.2,0.1,0.05,0.02])*100
+# new_tick_locations = np.log10(r02cn2dz(r0_mark)) + 15
+# ax2.set_xlim(ax1.get_xlim())
+# ax2.set_xticks(new_tick_locations)
+# labels = []
+# for i in np.arange(r0_mark.shape[0]):
+#   labels.append('{:.0f}'.format(r0_mark[i]))
+# ax2.set_xticklabels(labels)
 
-# # x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
-# # y = np.logspace(np.log10(1),np.log10(30))
+# ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
+# ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
+# ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
 
-# # yy, xx = np.meshgrid(y,x)
+# x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
+# y = np.logspace(np.log10(1),np.log10(30))
 
-
-# # ax1.set_xscale('log')
-# # ax1.set_yscale('log')
-# # #ax1.set_yscale('squareroot')
-
-# # ax1.grid()
-# # ax2.grid()
-
-# # # ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
-
-# # dact_immediate_dm = 0.05
-# # dact_next_immediate_dm = 0.05
-# # Dimmediate_dm = 0.4
-# # L0 = 5
-# # wvl = 500e-9
-
-# # RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
-# # APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
-
-# # CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
-# # ax1.clabel(CS)
-# # CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
-# # ax1.clabel(CS2)
-# # # plt.legend()
-
-# # TOPLOT = np.copy(avg_terminal_SR)#np.copy(avg_terminal_WFE_only_control)
-
-# # cmap = plt.colormaps["viridis"]
-# # for i in np.arange(r0HA.size):
-# #     ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/np.nanmax(TOPLOT)))
+# yy, xx = np.meshgrid(y,x)
 
 
-# # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(TOPLOT)),cmap=cmap),ax=ax1)
-# # fig.suptitle('Terminal Strehl ratio at 500 nm')
+# ax1.set_xscale('log')
+# ax1.set_yscale('log')
+# #ax1.set_yscale('squareroot')
 
-# # plt.gcf().set_size_inches(8,8)
-# # plt.show()
+# ax1.grid()
+# ax2.grid()
 
+# # ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
 
+# dact_immediate_dm = 0.05
+# dact_next_immediate_dm = 0.05
+# Dimmediate_dm = 0.4
+# L0 = 5
+# wvl = 500e-9
 
+# RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
+# APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
 
+# CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
+# ax1.clabel(CS)
+# CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
+# ax1.clabel(CS2)
+# # plt.legend()
 
-# # fig = plt.figure()
-# # ax1 = fig.add_subplot(111)
-# # ax2 = ax1.twiny()
+# TOPLOT = np.copy(avg_terminal_WFE)
 
-# # ax1.set_xlim(1e-15,r02cn2dz(0.02))
-# # ax2.set_ylim(1,30)
+# cmap = plt.colormaps["viridis"]
+# for i in np.arange(r0HA.size):
+#     ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/np.nanmax(TOPLOT)))
 
-# # r0_mark = np.array([5,2,1,0.5,0.2,0.1,0.05,0.02])*100
-# # new_tick_locations = np.log10(r02cn2dz(r0_mark)) + 15
-# # ax2.set_xlim(ax1.get_xlim())
-# # ax2.set_xticks(new_tick_locations)
-# # labels = []
-# # for i in np.arange(r0_mark.shape[0]):
-# #   labels.append('{:.0f}'.format(r0_mark[i]))
-# # ax2.set_xticklabels(labels)
-
-# # ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
-# # ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
-# # ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
-
-# # x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
-# # y = np.logspace(np.log10(1),np.log10(30))
-
-# # yy, xx = np.meshgrid(y,x)
+# fig.suptitle('Terminal WFE (nm)')
+# fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(TOPLOT)),cmap=cmap),ax=ax1)
 
 
-# # ax1.set_xscale('log')
-# # ax1.set_yscale('log')
-# # #ax1.set_yscale('squareroot')
-
-# # ax1.grid()
-# # ax2.grid()
-
-# # # ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
-
-# # dact_immediate_dm = 0.05
-# # dact_next_immediate_dm = 0.05
-# # Dimmediate_dm = 0.4
-# # L0 = 5
-# # wvl = 500e-9
-
-# # RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
-# # APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
-
-# # CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
-# # ax1.clabel(CS)
-# # CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
-# # ax1.clabel(CS2)
-# # # plt.legend()
-
-# # TOPLOT = np.copy(avg_terminal_WFE)
-
-# # cmap = plt.colormaps["viridis"]
-# # for i in np.arange(r0HA.size):
-# #     ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/np.nanmax(TOPLOT)))
-
-# # fig.suptitle('Terminal WFE (nm)')
-# # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(TOPLOT)),cmap=cmap),ax=ax1)
-
-
-# # plt.gcf().set_size_inches(8,8)
-# # plt.show()
-
-
-
-# DATA = np.copy(avg_terminal_WFE_only_control)
-# # r02cn2dz(r0HA)
-# # z
-
-# unique_AS = np.sort(np.unique(expect_AS))
-# unique_rytov = np.sort(np.unique(expect_rytov))
-
-
-# for i in np.arange(unique_AS.shape[0]):
-#     contour_val = unique_AS[i]
-#     TOPLOT = DATA[expect_AS == contour_val]
-#     X = expect_rytov[expect_AS == contour_val]
-#     plt.plot(X,TOPLOT,label='AS = {:.1f}% of subap.'.format(contour_val*100),ls='-',marker='o')
-# plt.xlabel('expect rytov')
-# plt.ylabel('terminal control WFE after 5 iteration (nm)')
-# plt.xscale('log')
-# plt.legend()
+# plt.gcf().set_size_inches(8,8)
 # plt.show()
 
 
-# DATA = np.copy(avg_terminal_WFE_only_control)
-# # r02cn2dz(r0HA)
-# # z
 
-# unique_AS = np.sort(np.unique(expect_AS))
-# unique_rytov = np.sort(np.unique(expect_rytov))
+DATA = np.copy(avg_terminal_WFE_only_control)
+# r02cn2dz(r0HA)
+# z
+
+unique_AS = np.sort(np.unique(expect_AS))
+unique_rytov = np.sort(np.unique(expect_rytov))
 
 
-# for i in np.arange(unique_rytov.shape[0]):
-#     contour_val = unique_rytov[i]
-#     TOPLOT = DATA[expect_rytov == contour_val]
-#     X = expect_AS[expect_rytov == contour_val]*100
-#     plt.plot(X,TOPLOT,label='rytov = {:.2f}'.format(contour_val),ls='-',marker='o')
-# plt.xlabel('expect aperture shift (% of subaperture)')
-# plt.ylabel('terminal control WFE after 5 iteration (nm)')
-# plt.xscale('log')
-# plt.legend()
-# plt.show()
+for i in np.arange(unique_AS.shape[0]):
+    contour_val = unique_AS[i]
+    TOPLOT = DATA[expect_AS == contour_val]
+    X = expect_rytov[expect_AS == contour_val]
+    plt.plot(X,TOPLOT,label='AS = {:.1f}% of subap.'.format(contour_val*100),ls='-',marker='o')
+plt.xlabel('expect rytov')
+plt.ylabel('terminal control WFE after 5 iteration (nm)')
+plt.xscale('log')
+plt.legend()
+plt.savefig('control-error-vs-rytov.png')
+plt.show()
+
+
+DATA = np.copy(avg_terminal_WFE_only_control)
+# r02cn2dz(r0HA)
+# z
+
+unique_AS = np.sort(np.unique(expect_AS))
+unique_rytov = np.sort(np.unique(expect_rytov))
+
+
+for i in np.arange(unique_rytov.shape[0]):
+    contour_val = unique_rytov[i]
+    TOPLOT = DATA[expect_rytov == contour_val]
+    X = expect_AS[expect_rytov == contour_val]*100
+    plt.plot(X,TOPLOT,label='rytov = {:.2f}'.format(contour_val),ls='-',marker='o')
+plt.xlabel('expect aperture shift (% of subaperture)')
+plt.ylabel('terminal control WFE after 5 iteration (nm)')
+plt.xscale('log')
+plt.legend()
+plt.savefig('control-error-vs-as.png')
+plt.show()
 
 
 plt.errorbar(expect_AS*100,(COMBINED_MEASURED_IM_AS)*100, error_as*100 ,ls='',marker='o',capsize=5)
@@ -1924,18 +1992,19 @@ plt.xscale('log')
 plt.yscale('log')
 plt.xlim(0.5,30)
 plt.ylim(0.5,30)
+plt.savefig('expect-measure-as-slope.png')
 plt.show()
 
-plt.errorbar(expect_AS*100,(COMBINED_MEASURED_IM_AS**2-COMBINED_MEASURED_IM_AS[0]**2)**0.5*100, error_as*100 ,ls='',marker='o',capsize=5)
-plt.plot(np.linspace(1,20),np.linspace(1,20))
-plt.xlabel('expected AS (% of subap)')
-plt.ylabel('measured AS (% of subap)')
-plt.title('comparison between measured vs expected AS : slope method - numerical error')
-plt.xscale('log')
-plt.yscale('log')
-plt.xlim(0.5,30)
-plt.ylim(0.5,30)
-plt.show()
+# plt.errorbar(expect_AS*100,(COMBINED_MEASURED_IM_AS**2-COMBINED_MEASURED_IM_AS[0]**2)**0.5*100, error_as*100 ,ls='',marker='o',capsize=5)
+# plt.plot(np.linspace(1,20),np.linspace(1,20))
+# plt.xlabel('expected AS (% of subap)')
+# plt.ylabel('measured AS (% of subap)')
+# plt.title('comparison between measured vs expected AS : slope method - numerical error')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlim(0.5,30)
+# plt.ylim(0.5,30)
+# plt.show()
 
 plt.errorbar(expect_rytov,COMBINED_MEASURED_IM_RYTOV, error_rytov ,ls='',marker='o',capsize=5)
 plt.plot(np.linspace(0.01,0.6),np.linspace(0.01,0.6))
@@ -1944,23 +2013,24 @@ plt.ylabel('measured rytov')
 plt.title('comparison between measured vs expected rytov')
 plt.xscale('log')
 plt.yscale('log')
-plt.show()
-
-plt.errorbar(expect_rytov,(COMBINED_MEASURED_IM_RYTOV-COMBINED_MEASURED_IM_RYTOV[0]), error_rytov ,ls='',marker='o',capsize=5)
-plt.plot(np.linspace(0.01,0.6),np.linspace(0.01,0.6))
-plt.xlabel('expected rytov')
-plt.ylabel('measured rytov')
-plt.title('comparison between measured vs expected rytov - numerical error')
-plt.xscale('log')
-plt.yscale('log')
 plt.xlim(0.005,0.8)
 plt.ylim(0.005,0.8)
+plt.savefig('expect-measure-rytov.png')
 plt.show()
 
+# plt.errorbar(expect_rytov,(COMBINED_MEASURED_IM_RYTOV-COMBINED_MEASURED_IM_RYTOV[0]), error_rytov ,ls='',marker='o',capsize=5)
+# plt.plot(np.linspace(0.01,0.6),np.linspace(0.01,0.6))
+# plt.xlabel('expected rytov')
+# plt.ylabel('measured rytov')
+# plt.title('comparison between measured vs expected rytov - numerical error')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlim(0.005,0.8)
+# plt.ylim(0.005,0.8)
+# plt.show()
 
-old_temp = np.sqrt(np.nanmean(MEASURED_IM_SUBAP_SHIFT**2,axis=(-1,-2,-3)))
-old_COMBINED_MEASURED_IM_AS = np.nanmean(old_temp,axis=-1)
-old_COMBINED_MEASURED_IM_AS_error = np.nanstd(old_temp,axis=-1)
+
+
 
 plt.errorbar(expect_AS*100,(old_COMBINED_MEASURED_IM_AS)*100,
              yerr=old_COMBINED_MEASURED_IM_AS_error*100,
@@ -1973,19 +2043,63 @@ plt.xscale('log')
 plt.yscale('log')
 plt.xlim(0.5,30)
 plt.ylim(0.5,30)
+plt.savefig('expect-measure-as-influence.png')
 plt.show()
 
-plt.errorbar(expect_AS*100,(old_COMBINED_MEASURED_IM_AS**2-old_COMBINED_MEASURED_IM_AS[0]**2)**0.5*100,
-             yerr=old_COMBINED_MEASURED_IM_AS_error*100,
-             ls='',marker='o',capsize=5)
-plt.plot(np.linspace(1,20),np.linspace(1,20))
-plt.xlabel('expected AS (% of subap)')
-plt.ylabel('measured AS (% of subap)')
-plt.title('comparison between measured vs expected AS influench method - numerical error')
+# plt.errorbar(expect_AS*100,(old_COMBINED_MEASURED_IM_AS**2-old_COMBINED_MEASURED_IM_AS[0]**2)**0.5*100,
+#              yerr=old_COMBINED_MEASURED_IM_AS_error*100,
+#              ls='',marker='o',capsize=5)
+# plt.plot(np.linspace(1,20),np.linspace(1,20))
+# plt.xlabel('expected AS (% of subap)')
+# plt.ylabel('measured AS (% of subap)')
+# plt.title('comparison between measured vs expected AS influench method - numerical error')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlim(0.5,30)
+# plt.ylim(0.5,30)
+# plt.show()
+
+
+# plt.plot(AS_R.flatten(),old_temp.flatten(),ls='',marker='.')
+# plt.plot(np.linspace(0.01,1),np.linspace(0.01,1),ls='-',marker='')
+# plt.plot(2*np.linspace(0.01,1),np.linspace(0.01,1),ls='-',marker='')
+# plt.plot(3*np.linspace(0.01,1),np.linspace(0.01,1),ls='-',marker='')
+# plt.xscale('log');plt.yscale('log')
+# plt.ylabel('influence function method')
+# plt.xlabel('slope method')
+# plt.show()
+
+from scipy.optimize import curve_fit
+def linear_log(x,m,c):
+    logx = np.log10(x)
+    logy = logx*m + c
+    y = 10**(logy)
+    return y
+
+A = AS_R[0:].flatten()
+B = old_temp[0:].flatten()
+
+B = B[~np.isnan(A)]
+A = A[~np.isnan(A)]
+
+order = np.argsort(A)
+A = A[order]
+B = B[order]
+
+fit_val = curve_fit(linear_log, A,B)
+plot_range = np.linspace(0.01,1)
+fit = linear_log(plot_range,fit_val[0][0],fit_val[0][1])
+
+r2 = 1 - (np.sum((B - linear_log(A,fit_val[0][0],fit_val[0][1]))**2))/(np.sum((B - B.mean())**2))
+
+plt.plot(A,B,ls='',marker='.',alpha=0.1)
+plt.plot(plot_range,fit)
+plt.title('log10(y)={:.2e}*log10(x)+{:.2e}, R2={:.2f}'.format(fit_val[0][0],fit_val[0][1],r2))
 plt.xscale('log')
 plt.yscale('log')
-plt.xlim(0.5,30)
-plt.ylim(0.5,30)
+plt.xlim(0.01,1)
+plt.ylim(0.01,1)
+plt.ylabel('influence function method')
+plt.xlabel('slope method')
+plt.savefig('as-slope-vs-influence.png')
 plt.show()
-
-
