@@ -292,6 +292,8 @@ class AngularPropSHWFS():
         
         # number of non-zero-padded  output pixel
         n_out = int(np.ceil(FoV_out/alpha_out))
+        if n_out % 2 == 1:
+            n_out += 1
         # linear input pixel scale in metre
         delta_in = float(d_in/n_in)
         # linear output pixel scale in metre

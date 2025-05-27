@@ -2779,7 +2779,7 @@ def testProp1Layer(wvl,real_z_list,r0HA,N,delta,new=True):
     return
     
 
-def testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta):
+def testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,tag=''):
     # wvl = 500e-9
     # zmin = 1e3
     # zmax = 100e3
@@ -2822,11 +2822,11 @@ def testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta):
     plt.ylabel('Variance of log-amplitude $\sigma^2_\chi$')
     plt.xscale('log')
     plt.yscale('log')
+    plt.savefig('test_rytov_index' + tag + '.pdf',bbox_inches='tight')
     plt.show()
-    plt.savefig('test_rytov_index.png')
     return
     
-def testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta):
+def testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,tag=''):
     # wvl = 500e-9
     # zmin = 1e3
     # zmax = 100e3
@@ -2877,8 +2877,9 @@ def testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta):
     plt.xlabel('Propagation distance (m)')
     plt.ylabel('FWHM (m)')
     plt.legend()
+    plt.savefig('test_scintillation_blob_size' + tag + '.pdf',bbox_inches='tight')
     plt.show()
-    plt.savefig('test_scintillation_blob_size.png')
+
     return
     
     

@@ -1,0 +1,14 @@
+mcaoName: EST
+
+pupilDiam: 4.2
+mcaoFov: 60
+
+nDM: 5
+dmHeight: [5000,9000,12000,20000,0]
+dmProjPitch: [0.232,0.333,0.259,0.334,0.084]
+
+wfsWvl: 500e-9
+wfsProjPitch: 0.08
+
+turbProfileName: la-palma-median.csv
+scaleToR0: 0.07

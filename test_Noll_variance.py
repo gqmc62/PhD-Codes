@@ -93,7 +93,7 @@ L0 = 10
 r0 = 5e-2
 
 flush = 1
-n_random = 10000
+n_random = 10
 
 N_list = [8,16,32,64,128]
 

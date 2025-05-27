@@ -1,4 +1,0 @@
-They are named after the month which I saved the state of codes.
-
-Everything in the codes folder should be in here no matter what it looks like some trashes or not.
-That is the point. To keep an ability to dug through trashes.

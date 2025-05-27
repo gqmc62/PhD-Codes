@@ -1,0 +1,14 @@
+mcaoName: MAD
+
+pupilDiam: 8
+mcaoFov: 120
+
+nDM: 2
+dmHeight: [0,8500]
+dmProjPitch: [0.889,0.889]
+
+wfsWvl: 550e-9
+wfsProjPitch: 1.00
+
+turbProfileName: paranal-median.csv
+scaleToR0: 0.14

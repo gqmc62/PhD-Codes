@@ -49,72 +49,41 @@ Created on Wed Jul 24 10:54:01 2024
     
 ###############################################################################
 
-# TYPELIST=['A','B','C'] # 10,8,6
-
-# HOME = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf'
-
-# for TYPE in TYPELIST:
-    
-    
-#     slodarRefDir = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf'
-    
-#     if (TYPE == 'A'):
-#         SIMNAME = 'bad_IM_A-'
-#         home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\Final\A' # bad_IM before fix
-#         # slopeCovName = 'slopeCovariance_A-vk.fits'
-#         refFuncName = 'slodarRefFunc4cmx10subapVK4mL0.fits'
-#     elif TYPE == 'B':
-#         SIMNAME = 'bad_IM_B-'
-#         home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\Final\B' #bad_IM_B
-#         # home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf\2025-03-24-19-32-05-B-final' #bad_IM_B
-#         # slopeCovName = 'slopeCovariance_B-vk.fits'
-#         refFuncName = 'slodarRefFunc5cmx8subapVK4mL0.fits'
-#     elif TYPE == 'C':
-#         SIMNAME = 'bad_IM_C-'
-#         home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\Final\C' #bad_IM_C
-#         # slopeCovName = 'slopeCovariance_C-vk.fits'
-#         refFuncName = 'slodarRefFunc6-6cmx6subapVK4mL0.fits'
-        
-#     dsub_A = 0.4/10
-#     dsub_B = 0.4/8
-#     dsub_C = 0.4/6
-
-###############################################################################
-    
 TYPELIST=['A','B','C'] # 10,8,6
+# TYPELIST = ['A']
 
-HOME = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\FinalSupreme\conf'
+HOME = r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter5Plots\LastChapter5Data\conf\FinalSupreme\conf'
 
 for TYPE in TYPELIST:
     
     
-    slodarRefDir = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf'
+    slodarRefDir = r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter5Plots\LastChapter5Data\conf'
     
     if (TYPE == 'A'):
         SIMNAME = 'bad_IM_A-'
-        home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\FinalSupreme\conf\A' # bad_IM before fix
+        home = r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter5Plots\LastChapter5Data\conf\FinalSupreme\conf\Data\A' # bad_IM before fix
         # slopeCovName = 'slopeCovariance_A-vk.fits'
         refFuncName = 'slodarRefFunc4cmx10subapVK4mL0.fits'
     elif TYPE == 'B':
         SIMNAME = 'bad_IM_B-'
-        home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\FinalSupreme\conf\B' #bad_IM_B
+        home = r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter5Plots\LastChapter5Data\conf\FinalSupreme\conf\Data\B' #bad_IM_B
         # home = r'C:\Users\gqmc62\AppData\Local\anaconda3\Lib\site-packages\soapy\conf\2025-03-24-19-32-05-B-final' #bad_IM_B
         # slopeCovName = 'slopeCovariance_B-vk.fits'
         refFuncName = 'slodarRefFunc5cmx8subapVK4mL0.fits'
     elif TYPE == 'C':
         SIMNAME = 'bad_IM_C-'
-        home = r'C:\Users\gqmc62\OneDrive - Durham University\Desktop\LastChapter5Data\conf\FinalSupreme\conf\C' #bad_IM_C
+        home = r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter5Plots\LastChapter5Data\conf\FinalSupreme\conf\Data\C' #bad_IM_C
         # slopeCovName = 'slopeCovariance_C-vk.fits'
         refFuncName = 'slodarRefFunc6-6cmx6subapVK4mL0.fits'
         
     dsub_A = 0.4/10
     dsub_B = 0.4/8
     dsub_C = 0.4/6
-
-
+    
 ###############################################################################
     
     from matplotlib import pyplot as plt
+    from matplotlib import colors
     # from soapy import soapy
     # import soapy
     import os
@@ -819,6 +788,7 @@ for TYPE in TYPELIST:
     
     z = np.copy(expect_rytov)
     r0HA = np.copy(expect_rytov)
+    label_list = []
     
     for i in np.arange(expect_rytov.shape[0]):
         expect_rytov[i] = float(name_list[i][5:9])
@@ -828,6 +798,8 @@ for TYPE in TYPELIST:
             config = yaml.safe_load(file)
             z[i] = config['DM'][2]['altitude']
             r0HA[i] = config['DM'][2]['r0']
+    
+        label_list.append('r0:{:.0f}cm, z:{:.3f}km'.format(r0HA[i],z[i]))
     
     wvl = float(config['Science'][0]['wavelength'])
     dsub = config['Telescope']['telDiam']/config['WFS'][0]['nxSubaps']
@@ -857,7 +829,7 @@ for TYPE in TYPELIST:
                     globals()[data_type_list[datatypes]] = np.zeros((new_SHAPE),dtype=float)
                 globals()[data_type_list[datatypes]][cases] = hdul[0].data
     
-    expect_AS = (0.162*wvl**2*dsub**(-1/3)*r0HA**(-5/3))**0.5*z/dsub
+    expect_AS = (0.162*wvl**2*(dsub**(-1/3)-D**(-1/3))*r0HA**(-5/3))**0.5*z/dsub
     expect_rytov = rytov_number(wvl, r0HA, z)
     
     TRIAL = IM.shape[1]
@@ -1249,7 +1221,10 @@ for TYPE in TYPELIST:
     
     new_coeff = B              #0.025501816814832663# from butterly's refFunc mid 0th layer either L or T
     
-    expect_AS = (new_coeff * wvl**2 * dsub**(-1/3) * r0HA**(-5/3))**0.5 * z / dsub
+    print(B,(1-(D/dsub)**(-1/3))*0.162)
+    
+    # expect_AS = (new_coeff * wvl**2 * dsub**(-1/3) * r0HA**(-5/3))**0.5 * z / dsub
+    expect_AS = ((1-(D/dsub)**(-1/3))*0.162 * wvl**2 * dsub**(-1/3) * r0HA**(-5/3))**0.5 * z / dsub
     
     # expect_AS = np.nan
     old_name_list = np.copy(name_list)
@@ -1368,12 +1343,12 @@ for TYPE in TYPELIST:
     
     
     grid_rytov = np.unique(np.round(expect_rytov,decimals=3))
-    grid_AS = np.unique(np.round(expect_AS,decimals=3))
+    grid_AS = np.unique(np.round(expect_AS,decimals=3))*100
     perfect_grid_IM_RMS = np.zeros((grid_rytov.shape[0],grid_AS.shape[0]),dtype=float)
     
     for cases in np.arange(CASES):
         perfect_grid_IM_RMS[np.where(np.round(expect_rytov[cases],decimals=3)==grid_rytov),
-                            np.where(np.round(expect_AS[cases],decimals=3)==grid_AS)] = IM_RMS[cases]
+                            np.where(np.round(expect_AS[cases],decimals=3)*100==grid_AS)] = IM_RMS[cases]
         
     perfect_grid_IM_RMS[perfect_grid_IM_RMS==0] = np.nan
     
@@ -1381,7 +1356,7 @@ for TYPE in TYPELIST:
     # plt.colorbar()
     CS = plt.contour(grid_rytov,grid_AS,perfect_grid_IM_RMS.T,colors='k')
     # plt.grid()
-    plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+    plt.plot(expect_rytov,expect_AS*100,marker='o',ls='',color='r')
     # plt.xscale('log')
     # plt.yscale('log')
     plt.xlabel('$\sigma_\chi^2$')
@@ -1392,10 +1367,10 @@ for TYPE in TYPELIST:
     plt.xscale('log')
     plt.yscale('log')
     # plt.xlim(0.005,0.8)
-    # plt.ylim(0.005,0.3)
-    plt.savefig(TYPE + 'IM_degrade.png')
+    # plt.ylim(0.5,200)
     plt.colorbar(CS2)
     # plt.axis('square')
+    plt.savefig(TYPE + 'IM_degrade.pdf', bbox_inches='tight')
     plt.show()
     
     ###############################################################################
@@ -1425,7 +1400,7 @@ for TYPE in TYPELIST:
     
     for cases in np.arange(CASES):
         perfect_grid_CC_RMS[np.where(np.round(expect_rytov[cases],decimals=3)==grid_rytov),
-                            np.where(np.round(expect_AS[cases],decimals=3)==grid_AS)] = CC_RMS[cases]
+                            np.where(np.round(expect_AS[cases],decimals=3)*100==grid_AS)] = CC_RMS[cases]
         
     perfect_grid_CC_RMS[perfect_grid_CC_RMS==0] = np.nan
     
@@ -1433,7 +1408,7 @@ for TYPE in TYPELIST:
     # plt.colorbar()
     CS = plt.contour(grid_rytov,grid_AS,perfect_grid_CC_RMS.T,colors='k')
     # plt.grid()
-    plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+    plt.plot(expect_rytov,expect_AS*100,marker='o',ls='',color='r')
     plt.xlabel('$\sigma_\chi^2$')
     plt.ylabel('AS (subap)')
     # plt.xscale('log')
@@ -1444,9 +1419,9 @@ for TYPE in TYPELIST:
     plt.xscale('log')
     plt.yscale('log')
     # plt.xlim(0.005,0.8)
-    # plt.ylim(0.005,0.3)
+    # plt.ylim(0.5,200)
     plt.colorbar(CS2)
-    plt.savefig(TYPE + 'CM_degrade.png')
+    plt.savefig(TYPE + 'CM_degrade.pdf', bbox_inches='tight')
     # plt.axis('square')
     plt.show()
     
@@ -1795,7 +1770,7 @@ for TYPE in TYPELIST:
     ###############################################################################
     
     
-    
+    #(np.nanmean((WFE[:,:,-1]),axis=-1) - np.nanmean(WFE[0,:,-1],axis=-1))#
     avg_terminal_WFE_only_control = (np.nanmean((WFE[:,:,-1]**2),axis=-1) - np.nanmean(WFE[0,:,-1]**2,axis=-1))**0.5
     avg_terminal_WFE_only_control[np.isnan(avg_terminal_WFE_only_control)] = 0
     # expect_rytov
@@ -1814,30 +1789,32 @@ for TYPE in TYPELIST:
     for cases in np.arange(CASES):
         # print(np.where(expect_rytov[cases]==grid_rytov),np.where(expect_AS[cases]==grid_AS))
         grid_WFE[np.where(np.round(expect_rytov[cases],decimals=3)==grid_rytov),
-                            np.where(np.round(expect_AS[cases],decimals=3)==grid_AS)] = avg_terminal_WFE_only_control[cases]
+                            np.where(np.round(expect_AS[cases],decimals=3)*100==grid_AS)] = avg_terminal_WFE_only_control[cases]
         
     # grid_WFE[grid_WFE==0] = np.nan
     
     # TEMP = np.nanmax(grid_WFE)
     
+    
+    
     CS2 = plt.contourf(grid_rytov,grid_AS,grid_WFE.T)
     # plt.colorbar()
     CS = plt.contour(grid_rytov,grid_AS,grid_WFE.T,colors='k')
     # plt.grid()
-    plt.plot(expect_rytov,expect_AS,marker='o',ls='',color='r')
+    plt.plot(expect_rytov,expect_AS*100,marker='o',ls='',color='r')
     plt.xlabel('$\sigma_\chi^2$')
     plt.ylabel('AS (subap)')
     # plt.xscale('log')
     # plt.yscale('log')
-    plt.title('WFE (nm), excluding static error')
+    # plt.title('WFE (nm), excluding static error')
     plt.clabel(CS)
-    plt.colorbar(CS2)
+    plt.colorbar(CS2,label='WFE (nm), excluding static error')
     # plt.legend()
     plt.xscale('log')
     plt.yscale('log')
     # plt.xlim(0.005,0.8)
-    # plt.ylim(0.005,0.3)
-    plt.savefig(TYPE + 'control_WFE.png')
+    # plt.ylim(0.5,200)
+    plt.savefig(TYPE + 'control_WFE.pdf', bbox_inches='tight')
     # plt.axis('square')
     plt.show()
     
@@ -1976,7 +1953,7 @@ for TYPE in TYPELIST:
         
     for cases in np.arange(CASES):
         # if (cases != [9,16,21]).all():
-        if (cases != [9,14,16,19,21]).all():
+        if (cases != [7,9,14,16,19,21]).all():
             continue
         
         plt.plot(np.arange(MODE - 1) + 1,
@@ -2010,7 +1987,7 @@ for TYPE in TYPELIST:
     plt.ylabel('variance of Z coefficients (rad$^2$)')
     plt.xlabel('Z-Modes')
     plt.title('Terminal Wavefront Residual Zernike Mode Decomposition\n' + name_list[cases])
-    plt.savefig(TYPE + 'z_decompose-selected.png')#_{:d}.png'.format(cases))
+    plt.savefig(TYPE + 'z_decompose-selected.pdf', bbox_inches='tight')#_{:d}.png'.format(cases))
     plt.show()
     
     
@@ -2151,7 +2128,7 @@ for TYPE in TYPELIST:
     MIN = np.min(np.array([cross_section_theory_psd.min(),np.nanmean(perfect_PSD_phase_new,axis=1).min(),np.nanmean(PSD_phase_new,axis=1).min()]))/10
     for cases in np.arange(CASES):
         # if (cases != [9,16,21]).all():
-        if (cases != [9,14,16,19,21]).all():
+        if (cases != [7,9,14,16,19,21]).all():
             continue
         plt.fill_between(PSD_phase_frequency_new[cases],
                      np.nanmean(PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*PSD_phase_new.shape[1]-2),
@@ -2176,7 +2153,7 @@ for TYPE in TYPELIST:
                  marker='.')
         
     plt.plot(PSD_phase_frequency_new[cases],cross_section_theory_psd,label='atm theory',color='k',ls=':')
-    plt.vlines(1/dsub/2,MIN,MAX,label='AO Nyquist Spatial Frequency',color='c')
+    plt.vlines(1/dsub/2,MIN,MAX,label='AO Nyquist Frequency',color='c')
     plt.xscale('log')
     plt.yscale('log')
     plt.ylim(MIN,MAX)
@@ -2184,10 +2161,66 @@ for TYPE in TYPELIST:
     # plt.title(name_list[cases])
     plt.xlabel('spatial frequency (1/m)')
     plt.ylabel('PSD of phase (rad$^2$ m$^2$)')
-    plt.savefig(TYPE + 'psd-phase-selected.png')#-{:d}.png'.format(cases))
+    plt.savefig(TYPE + 'psd-phase-selected.pdf', bbox_inches='tight')#-{:d}.png'.format(cases))
     plt.show()
     
+    
+    if TYPE == 'A':
         
+        plt.plot(np.arange(MODE - 1) + 1,
+                      np.var(perfect_RES_phase_Z[:,:,-1,1:],axis=(0,1),ddof=1).T,
+                      #color='g',
+                      label='no control error',marker='.')
+        plt.fill_between(np.arange(MODE - 1) + 1,
+                      np.var(perfect_RES_phase_Z[:,:,-1,1:],axis=(0,1),ddof=1).T + 2*np.var(perfect_RES_phase_Z[:,:,-1,1:],axis=(0,1),ddof=1).T/np.sqrt(2*ATM_Z.shape[0]*ATM_Z.shape[1] - 2),
+                      np.var(perfect_RES_phase_Z[:,:,-1,1:],axis=(0,1),ddof=1).T - 2*np.var(perfect_RES_phase_Z[:,:,-1,1:],axis=(0,1),ddof=1).T/np.sqrt(2*ATM_Z.shape[0]*ATM_Z.shape[1] - 2),
+                      #color='g',
+                      alpha=0.2)
+            
+        plt.plot(np.arange(MODE) + 1,theory_noll,ls=':',
+                 #color='k',
+                 label='theory')
+        
+        plt.yscale('log')
+        # plt.title('terminal z-decomposition')
+        plt.legend()
+        plt.ylabel('variance of Z coefficients (rad$^2$)')
+        plt.xlabel('Z-Modes')
+        # plt.title('Terminal Wavefront Residual Zernike Mode Decomposition\n' + name_list[cases])
+        plt.savefig('theory_' + 'z_decompose.pdf', bbox_inches='tight')#_{:d}.png'.format(cases))
+        plt.show()
+        
+        MAX = np.max(np.array([cross_section_theory_psd.max(),np.nanmean(perfect_PSD_phase_new,axis=1).max(),np.nanmean(PSD_phase_new,axis=1).max()]))*10
+        MIN = np.min(np.array([cross_section_theory_psd.min(),np.nanmean(perfect_PSD_phase_new,axis=1).min(),np.nanmean(PSD_phase_new,axis=1).min()]))/10
+        
+            
+        plt.fill_between(PSD_phase_frequency_new[cases],
+                     np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) + np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
+                     np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0) - np.nanstd(perfect_PSD_phase_new[cases,:,-1],axis=0,ddof=1)/np.sqrt(2*perfect_PSD_phase_new.shape[1]-2),
+                     #color='g',
+                     alpha=0.2)
+        plt.plot(PSD_phase_frequency_new[cases],
+                     np.nanmean(perfect_PSD_phase_new[cases,:,-1],axis=0),
+                     label='no control error',
+                     #color='g',
+                     marker='.')
+            
+        plt.plot(PSD_phase_frequency_new[cases],cross_section_theory_psd,label='atm theory',color='k',ls=':')
+        plt.vlines(1/dsub/2,MIN,MAX,label='AO Nyquist Frequency',color='c')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.ylim(MIN,MAX)
+        plt.legend()
+        # plt.title(name_list[cases])
+        plt.xlabel('spatial frequency (1/m)')
+        plt.ylabel('PSD of phase (rad$^2$ m$^2$)')
+        plt.savefig('theory_' + 'psd-phase.pdf', bbox_inches='tight')#-{:d}.png'.format(cases))
+        plt.show()
+        
+        
+
+    
+    
         
     # PSD_phase_new = PSD_intensity / 2.
     # perfect_PSD_phase_new = perfect_PSD_intensity / 2.
@@ -2341,94 +2374,181 @@ for TYPE in TYPELIST:
     ###############################################################################################
     
     
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111)
+    # ax2 = ax1.twiny()
+    
+    # ax1.set_xlim(1e-14,r02cn2dz(0.02))
+    # ax2.set_ylim(1,10)
+    
+    # r0_mark = np.array([1,0.5,0.2,0.1,0.05,0.02])*100
+    # new_tick_locations = np.log10(r02cn2dz(r0_mark/100)) + 14
+    # ax2.set_xlim(ax1.get_xlim())
+    # ax2.set_xticks(new_tick_locations)
+    # labels = []
+    # for i in np.arange(r0_mark.shape[0]):
+    #   labels.append('{:.0f}'.format(r0_mark[i]))
+    # ax2.set_xticklabels(labels)
+    
+    # ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
+    # ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
+    # ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
+    
+    # x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
+    # y = np.logspace(np.log10(1),np.log10(30))
+    
+    # yy, xx = np.meshgrid(y,x)
+    
+    
+    # ax1.set_xscale('log')
+    # ax1.set_yscale('log')
+    # #ax1.set_yscale('squareroot')
+    
+    # ax1.grid()
+    # ax2.grid()
+    
+    # # ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
+    
+    # dact_immediate_dm = dsub
+    # dact_next_immediate_dm = dsub
+    # Dimmediate_dm = 0.4
+    # L0 = 5
+    # wvl = 500e-9
+    # k = np.pi*2/wvl
+    
+    # RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
+    # # APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
+    
+    # # CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
+    # # ax1.clabel(CS)
+    # # CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
+    # # ax1.clabel(CS2)
+    # # # plt.legend()
+    # color_list = ['tab:blue','tab:orange','tab:green','tab:red','tab:purple','tab:brown','tab:pink','tab:gray','tab:olive','tab:cyan']
+    # count = 0
+    # for i in [0.01,0.02,0.05,0.1,0.3,0.6]:
+    #     ax1.plot(x,
+    #              (i/0.563/k**(7./6.)/x)**(6./5.)/1000.,
+    #              #label='rytov={:}'.format(i),
+    #              color=color_list[count],ls='-')
+    #     count += 1
+    # count = 0
+    # for i in [1,2,5,10,20,50]:
+    #     ax1.plot(x,
+    #              (i/100.
+    #               *dact_next_immediate_dm
+    #               /(0.162 * wvl**2 * (dsub**(-1/3)-D**(-1/3)) * cn2dz2r0(x)**(-5/3))**0.5)/1000
+    #              ,
+    #              #label='as={:}'.format(i),
+    #              color=color_list[count],ls='--')
+    #     count += 1
+    
+    # TOPLOT = np.copy(avg_terminal_WFE_only_control)
+    
+    # cmap = plt.colormaps["viridis"]
+    # for i in np.arange(r0HA.size):
+    #     ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/TOPLOT.max()))
+    # # ax1.tripcolor(r02cn2dz(r0HA),z/1000,TOPLOT)
+    # # ax1.tricontour(r02cn2dz(r0HA),z/1000,TOPLOT)
+    
+    
+    # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,TOPLOT.max()),cmap=cmap),ax=ax1)
+    # fig.suptitle('WFE from distorted control error after 5 iterations  (nm)')
+    
+    # # plt.legend()
+    # plt.gcf().set_size_inches(8,8)
+    # plt.savefig(TYPE + 'control-error-2.png')
+    # plt.show()
+    
+    from matplotlib.colors import LogNorm, Normalize
+    
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     ax2 = ax1.twiny()
-    
-    ax1.set_xlim(1e-15,r02cn2dz(0.02))
-    ax2.set_ylim(1,30)
-    
-    r0_mark = np.array([5,2,1,0.5,0.2,0.1,0.05,0.02])*100
-    new_tick_locations = np.log10(r02cn2dz(r0_mark)) + 15
+
+    ax1.set_xlim(1e-14, r02cn2dz(0.02))
+    ax2.set_ylim(1, 10)
+
+    r0_mark = np.array([1, 0.5, 0.2, 0.1, 0.05, 0.02]) * 100
+    new_tick_locations = np.log10(r02cn2dz(r0_mark / 100)) + 14
     ax2.set_xlim(ax1.get_xlim())
     ax2.set_xticks(new_tick_locations)
-    labels = []
-    for i in np.arange(r0_mark.shape[0]):
-      labels.append('{:.0f}'.format(r0_mark[i]))
+    labels = ['{:.0f}'.format(val) for val in r0_mark]
     ax2.set_xticklabels(labels)
-    
+
     ax2.set_xlabel('$r_0$ of turbulence layer in line of sight\nthat immediate DM is correcting (cm) at 500 nm')
     ax1.set_xlabel('$C^2_n$sec$\zeta dh$ of turbulence layer that immediate DM is correcting (m$^{1/3}$)')
     ax1.set_ylabel('Separation between immediate DM\nand its next immediate DM in a line of sight ($h$sec$\zeta$) (km)')
-    
-    x = r02cn2dz(np.logspace(np.log10(0.02),np.log10(5)))[::-1]
-    y = np.logspace(np.log10(1),np.log10(30))
-    
-    yy, xx = np.meshgrid(y,x)
-    
-    
+
+    x = r02cn2dz(np.logspace(np.log10(0.02), np.log10(5)))[::-1]
+    y = np.logspace(np.log10(1), np.log10(30))
+    yy, xx = np.meshgrid(y, x)
+
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    #ax1.set_yscale('squareroot')
-    
     ax1.grid()
     ax2.grid()
-    
-    # ax1.hlines(dm_separation/1000,1e-15,r02cn2dz(0.02),color='m')
-    
+
     dact_immediate_dm = dsub
     dact_next_immediate_dm = dsub
     Dimmediate_dm = 0.4
     L0 = 5
     wvl = 500e-9
-    k = np.pi*2/wvl
-    
-    RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy*1000.)
-    # APSHIFT = displacement(wvl, dact_immediate_dm, dact_next_immediate_dm, cn2dz2r0(xx), yy*1000., Dimmediate_dm, L0)
-    
-    # CS = ax1.contour(x,y,RYTOV.T,colors='r',levels=[0.01,0.02,0.05,0.1,0.3,0.6])
-    # ax1.clabel(CS)
-    # CS2 = ax1.contour(x,y,APSHIFT*100,colors='b',levels=[1,2,5,10,20,50])
-    # ax1.clabel(CS2)
-    # # plt.legend()
-    color_list = ['tab:blue','tab:orange','tab:green','tab:red','tab:purple','tab:brown','tab:pink','tab:gray','tab:olive','tab:cyan']
-    count = 0
-    for i in [0.01,0.02,0.05,0.1,0.3,0.6]:
+    k = np.pi * 2 / wvl
+
+    RYTOV = rytov_number(wvl, cn2dz2r0(xx), yy * 1000.)
+
+    color_list = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown']
+
+    for count, i in enumerate([0.01, 0.02, 0.05, 0.1, 0.3, 0.6]):
         ax1.plot(x,
-                 (i/0.563/k**(7./6.)/x)**(6./5.)/1000.,
-                 #label='rytov={:}'.format(i),
-                 color=color_list[count],ls='-')
-        count += 1
-    count = 0
-    for i in [1,2,5,10,20,50]:
+                 (i / 0.563 / k ** (7. / 6.) / x) ** (6. / 5.) / 1000.,
+                 color=color_list[count], ls='-')
+
+    for count, i in enumerate([1, 2, 5, 10, 20, 50]):
         ax1.plot(x,
-                 (i/100.
-                  *dact_next_immediate_dm
-                  /(new_coeff * wvl**2 * dsub**(-1/3) * cn2dz2r0(x)**(-5/3))**0.5)/1000
-                 ,
-                 #label='as={:}'.format(i),
-                 color=color_list[count],ls='--')
-        count += 1
-    
+                 (i / 100.
+                  * dact_next_immediate_dm
+                  / (0.162 * wvl ** 2 * (dsub ** (-1 / 3) - D ** (-1 / 3)) * cn2dz2r0(x) ** (-5 / 3)) ** 0.5) / 1000,
+                 color=color_list[count], ls='--')
+
     TOPLOT = np.copy(avg_terminal_WFE_only_control)
-    
-    cmap = plt.colormaps["viridis"]
-    for i in np.arange(r0HA.size):
-        ax1.plot(r02cn2dz(r0HA)[i],z[i]/1000,marker='o',markersize=20,color=cmap(TOPLOT[i]/100))
-    # ax1.tripcolor(r02cn2dz(r0HA),z/1000,TOPLOT)
-    # ax1.tricontour(r02cn2dz(r0HA),z/1000,TOPLOT)
-    
-    
-    fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,100),cmap=cmap),ax=ax1)
-    fig.suptitle('WFE from distorted control error after 5 iterations  (nm)')
-    
-    # plt.legend()
-    plt.gcf().set_size_inches(8,8)
-    plt.savefig(TYPE + 'control-error-2.png')
+
+    cmap = plt.cm.viridis
+
+    # Set minimum and maximum for color normalization
+    vmin = 1
+    vmax = 500#TOPLOT.max()
+
+    # Use LogNorm for color scaling
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    # First plot filled markers for points >= vmin
+    for i in range(r0HA.size):
+        if TOPLOT[i] >= vmin:
+            color_val = cmap(norm(TOPLOT[i]))
+            ax1.plot(r02cn2dz(r0HA)[i], z[i] / 1000,
+                     marker='o', markersize=20, color=color_val, linestyle='None')
+
+    # Then plot hollow shell markers for points < vmin on top
+    for i in range(r0HA.size):
+        if TOPLOT[i] < vmin:
+            ax1.plot(r02cn2dz(r0HA)[i], z[i] / 1000,
+                     marker='o', markersize=20, markerfacecolor='none',
+                     markeredgecolor='black', markeredgewidth=2, linestyle='None', zorder=10)
+
+    # Add colorbar for the filled points
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax1, label='WFE from distorted control error (nm, log scale)')
+
+    fig.suptitle('WFE from distorted control error after 5 iterations (nm)')
+    plt.gcf().set_size_inches(8, 8)
+
+    plt.savefig(TYPE + 'control-error-2.pdf', bbox_inches='tight')
     plt.show()
     
-    
-    
+    ########################################################################
     
     # fig = plt.figure()
     # ax1 = fig.add_subplot(111)
@@ -2571,59 +2691,59 @@ for TYPE in TYPELIST:
     unique_rytov = np.sort(np.unique(np.round(expect_rytov,decimals=3)))
     
     
-    for i in np.arange(unique_AS.shape[0]):
-        contour_val = unique_AS[i]
-        TOPLOT = DATA[np.round(expect_AS,decimals=3) == contour_val]
-        TOPLOT_ERROR = error[np.round(expect_AS,decimals=3) == contour_val]
-        X = expect_rytov[np.round(expect_AS,decimals=3) == contour_val]
-        plt.errorbar(X,TOPLOT,yerr=TOPLOT_ERROR,label='AS = {:.1f}% of subap.'.format(contour_val*100),ls='-',marker='o',capsize=5)
-    plt.xlabel('expect rytov')
-    plt.ylabel('terminal control WFE after 5 iteration (nm)')
-    plt.xscale('log')
-    plt.legend()
-    plt.savefig(TYPE + 'control-error-vs-rytov.png')
-    plt.show()
+    # for i in np.arange(unique_AS.shape[0]):
+    #     contour_val = unique_AS[i]
+    #     TOPLOT = DATA[np.round(expect_AS,decimals=3) == contour_val]
+    #     TOPLOT_ERROR = error[np.round(expect_AS,decimals=3) == contour_val]
+    #     X = expect_rytov[np.round(expect_AS,decimals=3) == contour_val]
+    #     plt.errorbar(X,TOPLOT,yerr=TOPLOT_ERROR,label='AS = {:.1f}% of subap.'.format(contour_val*100),ls='-',marker='o',capsize=5)
+    # plt.xlabel('expect rytov')
+    # plt.ylabel('terminal control WFE after 5 iteration (nm)')
+    # plt.xscale('log')
+    # plt.legend()
+    # plt.savefig(TYPE + 'control-error-vs-rytov.png')
+    # plt.show()
     
     
-    # DATA = np.copy(avg_terminal_WFE_only_control)
-    # r02cn2dz(r0HA)
-    # z
+    # # DATA = np.copy(avg_terminal_WFE_only_control)
+    # # r02cn2dz(r0HA)
+    # # z
     
-    # unique_AS = np.sort(np.unique(expect_AS))
-    # unique_rytov = np.sort(np.unique(expect_rytov))
+    # # unique_AS = np.sort(np.unique(expect_AS))
+    # # unique_rytov = np.sort(np.unique(expect_rytov))
     
     
-    for i in np.arange(unique_rytov.shape[0]):
-        contour_val = unique_rytov[i]
-        TOPLOT = DATA[np.round(expect_rytov,decimals=3) == contour_val]
-        TOPLOT_ERROR = error[np.round(expect_rytov,decimals=3) == contour_val]
-        X = expect_AS[np.round(expect_rytov,decimals=3) == contour_val]*100
-        plt.errorbar(X,TOPLOT,yerr=TOPLOT_ERROR,label='rytov = {:.2f}'.format(contour_val),ls='-',marker='o',capsize=5)
-    plt.xlabel('expect aperture shift (% of subaperture)')
-    plt.ylabel('terminal control WFE after 5 iteration (nm)')
-    plt.xscale('log')
-    plt.legend()
-    plt.savefig(TYPE + 'control-error-vs-as.png')
-    plt.show()
+    # for i in np.arange(unique_rytov.shape[0]):
+    #     contour_val = unique_rytov[i]
+    #     TOPLOT = DATA[np.round(expect_rytov,decimals=3) == contour_val]
+    #     TOPLOT_ERROR = error[np.round(expect_rytov,decimals=3) == contour_val]
+    #     X = expect_AS[np.round(expect_rytov,decimals=3) == contour_val]*100
+    #     plt.errorbar(X,TOPLOT,yerr=TOPLOT_ERROR,label='rytov = {:.2f}'.format(contour_val),ls='-',marker='o',capsize=5)
+    # plt.xlabel('expect aperture shift (% of subaperture)')
+    # plt.ylabel('terminal control WFE after 5 iteration (nm)')
+    # plt.xscale('log')
+    # plt.legend()
+    # plt.savefig(TYPE + 'control-error-vs-as.png')
+    # plt.show()
     
-    plt.clf()
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    MAX = expect_AS.max()*100
-    for i in np.arange(CASES):
-        plt.errorbar(expect_rytov[i],COMBINED_MEASURED_IM_RYTOV[i], error_rytov[i] ,ls='',marker='o',capsize=5,
-                     color=cmap(expect_AS[i]*100/MAX))
-    plt.plot(np.linspace(0.01,0.6),np.linspace(0.01,0.6))
-    plt.xlabel('expected rytov')
-    plt.ylabel('measured rytov')
-    plt.title('comparison between measured vs expected rytov\nexpect as (%subap) in color')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlim(0.005,0.8)
-    plt.ylim(0.005,0.8)
-    fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_AS*100)),cmap=cmap),ax=ax1)
-    plt.savefig(TYPE + 'expect-measure-rytov.png')
-    plt.show()
+    # plt.clf()
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111)
+    # MAX = expect_AS.max()*100
+    # for i in np.arange(CASES):
+    #     plt.errorbar(expect_rytov[i],COMBINED_MEASURED_IM_RYTOV[i], error_rytov[i] ,ls='',marker='o',capsize=5,
+    #                  color=cmap(expect_AS[i]*100/MAX))
+    # plt.plot(np.linspace(0.005,0.8),np.linspace(0.005,0.8))
+    # plt.xlabel('expected rytov')
+    # plt.ylabel('measured rytov')
+    # plt.title('comparison between measured vs expected rytov\nexpect as (%subap) in color')
+    # plt.xscale('log')
+    # plt.yscale('log')
+    # plt.xlim(0.005,0.8)
+    # plt.ylim(0.005,0.8)
+    # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_AS*100)),cmap=cmap),ax=ax1)
+    # plt.savefig(TYPE + 'expect-measure-rytov.png')
+    # plt.show()
     
     # plt.errorbar(expect_rytov,(COMBINED_MEASURED_IM_RYTOV-COMBINED_MEASURED_IM_RYTOV[0]), error_rytov ,ls='',marker='o',capsize=5)
     # plt.plot(np.linspace(0.01,0.6),np.linspace(0.01,0.6))
@@ -2672,60 +2792,60 @@ for TYPE in TYPELIST:
     # plt.show()
     
     
-    plt.clf()
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    MAX = expect_rytov.max()*100
-    for i in np.arange(CASES):
-        plt.errorbar(expect_AS[i]*100,
-                     (old_COMBINED_MEASURED_IM_AS[i])*100,
-                     yerr=old_COMBINED_MEASURED_IM_AS_error[i]*100,
-                     ls='',marker='o',capsize=5,
-                     color=cmap(expect_rytov[i]*100/MAX))
-    plt.plot(np.linspace(0.5,100),np.linspace(0.5,100))
-    plt.xlabel('expected AS (% of subap)')
-    plt.ylabel('measured AS (% of subap)')
-    plt.title('comparison between measured vs expected AS: influence method\nexpect rytov on color')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlim(0.5,100)
-    plt.ylim(0.5,100)
-    fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_rytov)),cmap=cmap),ax=ax1)
-    plt.savefig(TYPE + 'expect-measure-as-influence.png')
-    plt.show()
+    # plt.clf()
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111)
+    # MAX = expect_rytov.max()*100
+    # for i in np.arange(CASES):
+    #     plt.errorbar(expect_AS[i]*100,
+    #                  (old_COMBINED_MEASURED_IM_AS[i])*100,
+    #                  yerr=old_COMBINED_MEASURED_IM_AS_error[i]*100,
+    #                  ls='',marker='o',capsize=5,
+    #                  color=cmap(expect_rytov[i]*100/MAX))
+    # plt.plot(np.linspace(0.5,200),np.linspace(0.5,200))
+    # plt.xlabel('expected AS (% of subap)')
+    # plt.ylabel('measured AS (% of subap)')
+    # plt.title('comparison between measured vs expected AS: influence method\nexpect rytov on color')
+    # plt.xscale('log')
+    # plt.yscale('log')
+    # plt.xlim(0.5,200)
+    # plt.ylim(0.5,200)
+    # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_rytov)),cmap=cmap),ax=ax1)
+    # plt.savefig(TYPE + 'expect-measure-as-influence.png')
+    # plt.show()
     
-    plt.clf()
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    MAX = expect_rytov.max()
-    for i in np.arange(CASES):
-        plt.errorbar(expect_AS[i]*100,(adjust_COMBINED_MEASURED_IM_AS[i])*100, adjust_error_as[i]*100 ,ls='',marker='o',capsize=5,
-                     color=cmap(expect_rytov[i]/MAX))
-    plt.plot(np.linspace(0.5,100),np.linspace(0.5,100))
-    # plt.plot(np.linspace(2,50),np.linspace(2,50))
-    plt.xlabel('expected AS (% of subap)')
-    plt.ylabel('measured AS (% of subap)')
-    plt.title('comparison between measured vs expected AS : slope method\nexpect rytov in color')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlim(0.5,100)
-    plt.ylim(0.5,100)
-    fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_rytov)),cmap=cmap),ax=ax1)
-    plt.savefig(TYPE + 'expect-measure-as-slope.png')
-    plt.show()
+    # plt.clf()
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111)
+    # MAX = expect_rytov.max()
+    # for i in np.arange(CASES):
+    #     plt.errorbar(expect_AS[i]*100,(adjust_COMBINED_MEASURED_IM_AS[i])*100, adjust_error_as[i]*100 ,ls='',marker='o',capsize=5,
+    #                  color=cmap(expect_rytov[i]/MAX))
+    # plt.plot(np.linspace(0.5,200),np.linspace(0.5,200))
+    # # plt.plot(np.linspace(2,50),np.linspace(2,50))
+    # plt.xlabel('expected AS (% of subap)')
+    # plt.ylabel('measured AS (% of subap)')
+    # plt.title('comparison between measured vs expected AS : slope method\nexpect rytov in color')
+    # plt.xscale('log')
+    # plt.yscale('log')
+    # plt.xlim(0.5,200)
+    # plt.ylim(0.5,200)
+    # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_rytov)),cmap=cmap),ax=ax1)
+    # plt.savefig(TYPE + 'expect-measure-as-slope.png')
+    # plt.show()
     
-    plt.errorbar(old_COMBINED_MEASURED_IM_AS.flatten(),adjust_COMBINED_MEASURED_IM_AS.flatten(),
-                 xerr=old_COMBINED_MEASURED_IM_AS_error.flatten(),yerr=adjust_error_as.flatten(),
-                 ls='',marker='o',capsize=5)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlim(0.01,1)
-    plt.ylim(0.01,1)
-    plt.plot([0.01,1],[0.01,1])
-    plt.xlabel('actuator shift - influence method (DM pitch)')
-    plt.ylabel('actuator shift - slope method (DM pitch)')
-    plt.savefig(TYPE + 'influ-slope.png')
-    plt.show()
+    # plt.errorbar(old_COMBINED_MEASURED_IM_AS.flatten()*100,adjust_COMBINED_MEASURED_IM_AS.flatten()*100,
+    #              xerr=old_COMBINED_MEASURED_IM_AS_error.flatten()*100,yerr=adjust_error_as.flatten()*100,
+    #              ls='',marker='o',capsize=5)
+    # plt.xscale('log')
+    # plt.yscale('log')
+    # plt.xlim(0.5,200)
+    # plt.ylim(0.5,200)
+    # plt.plot([0.5,200],[0.5,200])
+    # plt.xlabel('actuator shift - influence method (DM pitch)')
+    # plt.ylabel('actuator shift - slope method (DM pitch)')
+    # plt.savefig(TYPE + 'influ-slope.png')
+    # plt.show()
     
     if TYPE == 'A':
         expect_rytov_A = np.copy(expect_rytov)
@@ -2784,33 +2904,120 @@ for TYPE in TYPELIST:
 
 os.chdir(HOME)
 
-plt.errorbar(expect_rytov_A,WFE_A_control,yerr=WFE_A_error,
+plt.errorbar(expect_rytov_A,WFE_A_control,yerr=WFE_A_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_A*100),capsize=5)
-plt.errorbar(expect_rytov_B,WFE_B_control,yerr=WFE_B_error,
+plt.errorbar(expect_rytov_B,WFE_B_control,yerr=WFE_B_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_B*100),capsize=5)
-plt.errorbar(expect_rytov_C,WFE_C_control,yerr=WFE_C_error,
+plt.errorbar(expect_rytov_C,WFE_C_control,yerr=WFE_C_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_C*100),capsize=5)
-# plt.yscale('log')
+plt.yscale('log')
 plt.xscale('log')
 plt.ylabel('control error (nm)')
 plt.xlabel('expect rytov')
 plt.legend()
-# plt.ylim(0,500)
+plt.ylim(1,500)
+plt.savefig('compare-all-control-rytov.pdf', bbox_inches='tight')
 plt.show()
 
-plt.errorbar(expect_AS_A,WFE_A_control,yerr=WFE_A_error,
+plt.errorbar(expect_AS_A*100,WFE_A_control,yerr=WFE_A_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_A*100),capsize=5)
-plt.errorbar(expect_AS_B,WFE_B_control,yerr=WFE_B_error,
+plt.errorbar(expect_AS_B*100,WFE_B_control,yerr=WFE_B_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_B*100),capsize=5)
-plt.errorbar(expect_AS_C,WFE_C_control,yerr=WFE_C_error,
+plt.errorbar(expect_AS_C*100,WFE_C_control,yerr=WFE_C_error/np.sqrt(TRIAL),
              ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_C*100),capsize=5)
-# plt.yscale('log')
+plt.yscale('log')
 plt.xscale('log')
 plt.ylabel('control error (nm)')
-plt.xlabel('expect as (dsub)')
-# plt.ylim(0,500)
+plt.xlabel('expect as (%dsub)')
+plt.ylim(1,500)
 plt.legend()
+plt.savefig('compare-all-control-as.pdf', bbox_inches='tight')
 plt.show()
+
+# Define color normalization based on AS range
+all_expect_AS = np.array([
+    np.min([expect_AS_A[1:], expect_AS_B[1:], expect_AS_C[1:]]),
+    np.max([expect_AS_A[1:], expect_AS_B[1:], expect_AS_C[1:]])
+])
+norm = colors.LogNorm(vmin=all_expect_AS[0], vmax=all_expect_AS[1])
+sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+# Plotting
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+for i in range(CASES - 1):
+    ax1.errorbar(expect_rytov_A[i+1], WFE_A_control[i+1],
+                 yerr=WFE_A_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_A[i+1])))
+
+    ax1.errorbar(expect_rytov_B[i+1], WFE_B_control[i+1],
+                 yerr=WFE_B_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_B[i+1])))
+
+    ax1.errorbar(expect_rytov_C[i+1], WFE_C_control[i+1],
+                 yerr=WFE_C_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_C[i+1])))
+
+# Axis scales and labels
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Expected Rytov')
+ax1.set_ylabel('Control Error (nm)')
+# ax1.set_xlim(0.01,1)
+# ax1.set_ylim(1, 500)
+# plt.axis('square')
+
+# Colorbar
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected AS (% subaperture, log scale)')
+
+# Save and show
+plt.savefig('compare-all-control-rytov-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
+# Normalize color scale on expected Rytov values (log scale recommended)
+MIN = np.min([expect_rytov_A[1:], expect_rytov_B[1:], expect_rytov_C[1:]])
+MAX = np.max([expect_rytov_A[1:], expect_rytov_B[1:], expect_rytov_C[1:]])
+norm = colors.LogNorm(vmin=MIN, vmax=MAX)
+sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+for i in range(CASES - 1):
+    ax1.errorbar(expect_AS_A[i+1] * 100, WFE_A_control[i+1],
+                 yerr=WFE_A_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_A[i+1])))
+
+    ax1.errorbar(expect_AS_B[i+1] * 100, WFE_B_control[i+1],
+                 yerr=WFE_B_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_B[i+1])))
+
+    ax1.errorbar(expect_AS_C[i+1] * 100, WFE_C_control[i+1],
+                 yerr=WFE_C_error[i+1] / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_C[i+1])))
+
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Expected AS (% subaperture)')
+ax1.set_ylabel('Control Error (nm)')
+plt.ylim(1, 500)
+
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected Rytov (log scale)')
+
+plt.savefig('compare-all-control-as-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
 
 # plt.errorbar(AS_influ_A,WFE_A_control,xerr=AS_influ_error_A/TRIAL**0.5,yerr=WFE_A_error/TRIAL**0.5,
 #               ls='',marker='o',label='dsub{:.2f}cm'.format(dsub_A*100),capsize=5)
@@ -2876,16 +3083,16 @@ plt.show()
 # for i in np.arange(CASES):
 #     plt.errorbar(expect_AS[i]*100,(adjust_COMBINED_MEASURED_IM_AS[i])*100-expect_AS[i]*100, adjust_error_as[i]*100 ,ls='',marker='o',capsize=5,
 #                  color=cmap(expect_rytov[i]/MAX))
-# # plt.plot(np.linspace(0.5,100),np.linspace(0.5,100))
-# plt.hlines(0,0.5,100)
+# # plt.plot(np.linspace(0.5,200),np.linspace(0.5,200))
+# plt.hlines(0,0.5,200)
 # # plt.plot(np.linspace(2,50),np.linspace(2,50))
 # plt.xlabel('expected AS (% of subap)')
 # plt.ylabel('measured AS (% of subap)')
 # plt.title('comparison between measured vs expected AS : slope method\nexpect rytov in color')
 # # plt.xscale('log')
 # # plt.yscale('log')
-# # plt.xlim(0.5,100)
-# # plt.ylim(0.5,100)
+# # plt.xlim(0.5,200)
+# # plt.ylim(0.5,200)
 # fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0,np.nanmax(expect_rytov)),cmap=cmap),ax=ax1)
 # plt.savefig(TYPE + 'expect-measure-as-slope.png')
 # plt.show()
@@ -3104,28 +3311,27 @@ all_expect_AS = np.array([np.min([expect_AS_A[1:],expect_AS_B[1:],expect_AS_C[1:
                           np.max([expect_AS_A[1:],expect_AS_B[1:],expect_AS_C[1:]])])
 
     
-plt.errorbar(expect_rytov_A[1:],rytov_A[1:].flatten(),yerr=rytov_error_A[1:].flatten(),
+plt.errorbar(expect_rytov_A[1:],rytov_A[1:].flatten(),yerr=rytov_error_A[1:].flatten()/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_A*100))
-plt.errorbar(expect_rytov_B[1:],rytov_B[1:].flatten(),yerr=rytov_error_B[1:].flatten(),
+plt.errorbar(expect_rytov_B[1:],rytov_B[1:].flatten(),yerr=rytov_error_B[1:].flatten()/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_B*100))
-plt.errorbar(expect_rytov_C[1:],rytov_C[1:].flatten(),yerr=rytov_error_C[1:].flatten(),
+plt.errorbar(expect_rytov_C[1:],rytov_C[1:].flatten(),yerr=rytov_error_C[1:].flatten()/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_C*100))
-plt.plot(expect_rytov_A[1:],expect_rytov_A[1:])
-plt.plot(expect_rytov_B[1:],expect_rytov_B[1:])
-plt.plot(expect_rytov_C[1:],expect_rytov_C[1:])
+plt.plot([0.01,0.8],[0.01,0.8])
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('expect rytov')
 plt.ylabel('measured rytov')
 plt.legend()
-plt.savefig('compare-all-config-rytov.png')
+plt.axis('square')
+plt.savefig('compare-all-config-rytov.pdf', bbox_inches='tight')
 plt.show()
 
-plt.errorbar(expect_AS_A[1:]*100,AS_influ_A[1:].flatten()*100,yerr=AS_influ_error_A[1:].flatten()*100,
+plt.errorbar(expect_AS_A[1:]*100,AS_influ_A[1:].flatten()*100,yerr=AS_influ_error_A[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_A*100))
-plt.errorbar(expect_AS_B[1:]*100,AS_influ_B[1:].flatten()*100,yerr=AS_influ_error_B[1:].flatten()*100,
+plt.errorbar(expect_AS_B[1:]*100,AS_influ_B[1:].flatten()*100,yerr=AS_influ_error_B[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_B*100))
-plt.errorbar(expect_AS_C[1:]*100,AS_influ_C[1:].flatten()*100,yerr=AS_influ_error_C[1:].flatten()*100,
+plt.errorbar(expect_AS_C[1:]*100,AS_influ_C[1:].flatten()*100,yerr=AS_influ_error_C[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_C*100))
 # plt.plot(expect_AS_A[1:]*100,expect_AS_A[1:]*100)
 # plt.plot(expect_AS_B[1:]*100,expect_AS_B[1:]*100)
@@ -3136,14 +3342,15 @@ plt.yscale('log')
 plt.xlabel('expect AS (% subap)')
 plt.ylabel('measured AS : influence method (% subap)')
 plt.legend()
-plt.savefig('compare-all-config-as-influ.png')
+plt.axis('square')
+plt.savefig('compare-all-config-as-influ.pdf', bbox_inches='tight')
 plt.show()
 
-plt.errorbar(expect_AS_A[1:]*100,AS_slope_A[1:].flatten()*100,yerr=AS_slope_error_A[1:].flatten()*100,
+plt.errorbar(expect_AS_A[1:]*100,AS_slope_A[1:].flatten()*100,yerr=AS_slope_error_A[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_A*100))
-plt.errorbar(expect_AS_B[1:]*100,AS_slope_B[1:].flatten()*100,yerr=AS_slope_error_B[1:].flatten()*100,
+plt.errorbar(expect_AS_B[1:]*100,AS_slope_B[1:].flatten()*100,yerr=AS_slope_error_B[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_B*100))
-plt.errorbar(expect_AS_C[1:]*100,AS_slope_C[1:].flatten()*100,yerr=AS_slope_error_C[1:].flatten()*100,
+plt.errorbar(expect_AS_C[1:]*100,AS_slope_C[1:].flatten()*100,yerr=AS_slope_error_C[1:].flatten()*100/np.sqrt(TRIAL),
               ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_C*100))
 # plt.plot(expect_AS_A[1:]*100,expect_AS_A[1:]*100)
 # plt.plot(expect_AS_B[1:]*100,expect_AS_B[1:]*100)
@@ -3154,26 +3361,238 @@ plt.yscale('log')
 plt.xlabel('expect AS (% subap)')
 plt.ylabel('measured AS : slope method (% subap)')
 plt.legend()
-plt.savefig('compare-all-config-as-slope.png')
+plt.axis('square')
+plt.savefig('compare-all-config-as-slope.pdf', bbox_inches='tight')
+plt.show()
+
+plt.clf()
+
+plt.errorbar(AS_influ_A[1:]*100,AS_slope_A[1:].flatten()*100,
+             xerr=AS_influ_error_A[1:].flatten()*100/np.sqrt(TRIAL),
+             yerr=AS_slope_error_A[1:].flatten()*100/np.sqrt(TRIAL),
+              ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_A*100))
+plt.errorbar(AS_influ_B[1:]*100,AS_slope_B[1:].flatten()*100,
+             xerr=AS_influ_error_A[1:].flatten()*100/np.sqrt(TRIAL),
+             yerr=AS_slope_error_B[1:].flatten()*100/np.sqrt(TRIAL),
+              ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_B*100))
+plt.errorbar(AS_influ_C[1:]*100,AS_slope_C[1:].flatten()*100,
+             xerr=AS_influ_error_A[1:].flatten()*100/np.sqrt(TRIAL),
+             yerr=AS_slope_error_C[1:].flatten()*100/np.sqrt(TRIAL),
+              ls='',marker='o',capsize=5,label='subap:{:.2f}cm'.format(dsub_C*100))
+# plt.plot(expect_AS_A[1:]*100,expect_AS_A[1:]*100)
+# plt.plot(expect_AS_B[1:]*100,expect_AS_B[1:]*100)
+# plt.plot(expect_AS_C[1:]*100,expect_AS_C[1:]*100)
+plt.plot(all_expect_AS*100,all_expect_AS*100)
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('measured AS : influence method (% subap)')
+plt.ylabel('measured AS : slope method (% subap)')
+plt.legend()
+plt.axis('square')
+plt.savefig('compare-all-config-as-influ-slope.pdf', bbox_inches='tight')
 plt.show()
 
 plt.clf()
 
 
+###############################################################################
 
-measured_coeff_A = AS_influ_A**2/wvl**2/dsub_A**(-1/3)/r0HA**(-5/3)/z**2*dsub_A**2
-measured_coeff_error_A = (2*AS_influ_A*AS_influ_error_A)**2/wvl**2/dsub_A**(-1/3)/r0HA**(-5/3)/z**2*dsub_A**2
+all_expect_AS = np.array([
+    np.min([np.min(expect_AS_A[1:]), np.min(expect_AS_B[1:]), np.min(expect_AS_C[1:])]),
+    np.max([np.max(expect_AS_A[1:]), np.max(expect_AS_B[1:]), np.max(expect_AS_C[1:])])
+])
 
-measured_coeff_B = AS_influ_B**2/wvl**2/dsub_B**(-1/3)/r0HA**(-5/3)/z**2*dsub_B**2
-measured_coeff_error_B = (2*AS_influ_B*AS_influ_error_B)**2/wvl**2/dsub_B**(-1/3)/r0HA**(-5/3)/z**2*dsub_B**2
+# Log normalization for colors
+norm = colors.LogNorm(vmin=all_expect_AS[0]*100, vmax=all_expect_AS[1]*100)
+sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
 
-measured_coeff_C = AS_influ_C**2/wvl**2/dsub_C**(-1/3)/r0HA**(-5/3)/z**2*dsub_C**2
-measured_coeff_error_C = (2*AS_influ_C*AS_influ_error_C)**2/wvl**2/dsub_C**(-1/3)/r0HA**(-5/3)/z**2*dsub_C**2
+# Plot
+fig, ax1 = plt.subplots()
 
-measured_coeff = np.concatenate([measured_coeff_A[1:],measured_coeff_B[1:],measured_coeff_C[1:]])
-measured_coeff_error = np.concatenate([measured_coeff_error_A[1:],measured_coeff_error_B[1:],measured_coeff_error_C[1:]])
+for i in range(CASES-1):
+    ax1.errorbar(expect_rytov_C[i+1], rytov_C[i+1].flatten(),
+                 yerr=rytov_error_C[i+1].flatten() / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_C[i+1]*100)))
 
-print('current coeff : {:.3f}'.format(np.average(measured_coeff,weights=1/measured_coeff_error**2)))
+    ax1.errorbar(expect_rytov_B[i+1], rytov_B[i+1].flatten(),
+                 yerr=rytov_error_B[i+1].flatten() / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_B[i+1]*100)))
+
+    ax1.errorbar(expect_rytov_A[i+1], rytov_A[i+1].flatten(),
+                 yerr=rytov_error_A[i+1].flatten() / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_AS_A[i+1]*100)))
+
+# Diagonal reference line
+ax1.plot([0.01, 0.8], [0.01, 0.8], color='gray', linestyle='--')
+
+# Log-log scale
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Expected Rytov')
+ax1.set_ylabel('Measured Rytov')
+ax1.set_aspect('equal')
+
+# Colorbar
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected AS (log scale)')
+
+# Save and show
+plt.savefig('compare-all-config-rytov-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
+MIN = np.min([np.min(expect_rytov_A[1:]), np.min(expect_rytov_B[1:]), np.min(expect_rytov_C[1:])])
+MAX = np.max([np.max(expect_rytov_A), np.max(expect_rytov_B), np.max(expect_rytov_C)])
+
+# Set up colormap and log-normalization
+norm = colors.LogNorm(vmin=MIN, vmax=MAX)
+sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+# Create plot
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+for i in range(CASES - 1):
+    ax1.errorbar(expect_AS_A[i+1] * 100, AS_influ_A[i+1].flatten() * 100,
+                 yerr=AS_influ_error_A[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_A[i+1])))
+
+    ax1.errorbar(expect_AS_B[i+1] * 100, AS_influ_B[i+1].flatten() * 100,
+                 yerr=AS_influ_error_B[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_B[i+1])))
+
+    ax1.errorbar(expect_AS_C[i+1] * 100, AS_influ_C[i+1].flatten() * 100,
+                 yerr=AS_influ_error_C[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_C[i+1])))
+
+# Diagonal line for reference
+ax1.plot(all_expect_AS * 100, all_expect_AS * 100, color='gray', linestyle='--')
+
+# Log-log axes
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Expected AS (% subaperture)')
+ax1.set_ylabel('Measured AS (influence method, % subaperture)')
+ax1.set_aspect('equal')
+
+# Colorbar for expect_rytov values
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected Rytov (log scale)')
+
+# Finalize
+plt.axis('square')
+plt.savefig('compare-all-config-as-influ-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+for i in range(CASES - 1):
+    ax1.errorbar(expect_AS_A[i+1] * 100, AS_slope_A[i+1].flatten() * 100,
+                 yerr=AS_slope_error_A[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_A[i+1])))
+
+    ax1.errorbar(expect_AS_B[i+1] * 100, AS_slope_B[i+1].flatten() * 100,
+                 yerr=AS_slope_error_B[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_B[i+1])))
+
+    ax1.errorbar(expect_AS_C[i+1] * 100, AS_slope_C[i+1].flatten() * 100,
+                 yerr=AS_slope_error_C[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_C[i+1])))
+
+# Reference line (diagonal)
+ax1.plot(all_expect_AS * 100, all_expect_AS * 100, color='gray', linestyle='--')
+
+# Set log-log axes and labels
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Expected AS (% subaperture)')
+ax1.set_ylabel('Measured AS: slope method (% subaperture)')
+ax1.set_aspect('equal')
+
+# Add consistent colorbar
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected Rytov (log scale)')
+
+# Finalize
+plt.axis('square')
+plt.savefig('compare-all-config-as-slope-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
+
+# Create figure
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+# Plot data with error bars and consistent color mapping
+for i in range(CASES - 1):
+    ax1.errorbar(AS_influ_A[i+1] * 100, AS_slope_A[i+1].flatten() * 100,
+                 xerr=AS_influ_error_A[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 yerr=AS_slope_error_A[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_A[i+1])))
+
+    ax1.errorbar(AS_influ_B[i+1] * 100, AS_slope_B[i+1].flatten() * 100,
+                 xerr=AS_influ_error_B[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 yerr=AS_slope_error_B[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_B[i+1])))
+
+    ax1.errorbar(AS_influ_C[i+1] * 100, AS_slope_C[i+1].flatten() * 100,
+                 xerr=AS_influ_error_C[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 yerr=AS_slope_error_C[i+1].flatten() * 100 / np.sqrt(TRIAL),
+                 ls='', marker='o', capsize=5,
+                 color=cmap(norm(expect_rytov_C[i+1])))
+
+# Diagonal reference line
+ax1.plot(all_expect_AS * 100, all_expect_AS * 100, color='gray', linestyle='--')
+
+# Log-log scale and labels
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlabel('Measured AS: influence method (% subaperture)')
+ax1.set_ylabel('Measured AS: slope method (% subaperture)')
+ax1.set_aspect('equal')
+
+# Add colorbar
+cbar = plt.colorbar(sm, ax=ax1)
+cbar.set_label('Expected Rytov (log scale)')
+
+# Finalize plot
+plt.axis('square')
+plt.savefig('compare-all-config-as-influ-slope-color.pdf', bbox_inches='tight')
+plt.show()
+plt.clf()
+
+###############################################################################
+# #these equation is wrong. it doesn't include the nxsub ratio
+
+# measured_coeff_A = AS_influ_A**2/wvl**2/dsub_A**(-1/3)/r0HA**(-5/3)/z**2*dsub_A**2
+# measured_coeff_error_A = (2*AS_influ_A*AS_influ_error_A)**2/wvl**2/dsub_A**(-1/3)/r0HA**(-5/3)/z**2*dsub_A**2
+
+# measured_coeff_B = AS_influ_B**2/wvl**2/dsub_B**(-1/3)/r0HA**(-5/3)/z**2*dsub_B**2
+# measured_coeff_error_B = (2*AS_influ_B*AS_influ_error_B)**2/wvl**2/dsub_B**(-1/3)/r0HA**(-5/3)/z**2*dsub_B**2
+
+# measured_coeff_C = AS_influ_C**2/wvl**2/dsub_C**(-1/3)/r0HA**(-5/3)/z**2*dsub_C**2
+# measured_coeff_error_C = (2*AS_influ_C*AS_influ_error_C)**2/wvl**2/dsub_C**(-1/3)/r0HA**(-5/3)/z**2*dsub_C**2
+
+# measured_coeff = np.concatenate([measured_coeff_A[1:],measured_coeff_B[1:],measured_coeff_C[1:]])
+# measured_coeff_error = np.concatenate([measured_coeff_error_A[1:],measured_coeff_error_B[1:],measured_coeff_error_C[1:]])
+
+# print('current A coeff : {:.3f}'.format(np.average(measured_coeff_A[1:],weights=1/measured_coeff_error_A[1:]**2)))
+# print('current B coeff : {:.3f}'.format(np.average(measured_coeff_B[1:],weights=1/measured_coeff_error_B[1:]**2)))
+# print('current C coeff : {:.3f}'.format(np.average(measured_coeff_C[1:],weights=1/measured_coeff_error_C[1:]**2)))
 
 
 
@@ -3204,68 +3623,68 @@ Ce /= ((wvl**2*dsub**(-1/3) * r0HA**(-5/3)))
 De /= ((wvl**2*dsub**(-1/3) * r0HA**(-5/3)))
 
 
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV,A/new_coeff,
-             yerr=Ae/new_coeff, capsize=5,
-             label='WFS slope of HADM',marker='o',ls='')
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV,B/new_coeff,
-         yerr=Be/new_coeff, capsize=5,
-         label='WFS slope of GLATM',marker='o',ls='')
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV,C/new_coeff,
-             yerr=Ce/new_coeff, capsize=5,
-             label='measured as : influence method',ls='',marker='o')
-plt.errorbar(COMBINED_MEASURED_IM_RYTOV,D/new_coeff,
-             yerr=De/new_coeff, capsize=5,
-             label='measured as : slope method',ls='',marker='o')
-# plt.hlines(1,0,0.6,label='Butterly')
-plt.legend()
-plt.xlabel('measure rytov')
-plt.ylabel('measure as coef (ratio to butterly)')
-plt.yscale('log')
-plt.ylim(0.1,10)
-plt.grid()
-plt.show()
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV,A/new_coeff,
+#              yerr=Ae/new_coeff, capsize=5,
+#              label='WFS slope of HADM',marker='o',ls='')
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV,B/new_coeff,
+#          yerr=Be/new_coeff, capsize=5,
+#          label='WFS slope of GLATM',marker='o',ls='')
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV,C/new_coeff,
+#              yerr=Ce/new_coeff, capsize=5,
+#              label='measured as : influence method',ls='',marker='o')
+# plt.errorbar(COMBINED_MEASURED_IM_RYTOV,D/new_coeff,
+#              yerr=De/new_coeff, capsize=5,
+#              label='measured as : slope method',ls='',marker='o')
+# # plt.hlines(1,0,0.6,label='Butterly')
+# plt.legend()
+# plt.xlabel('measure rytov')
+# plt.ylabel('measure as coef (ratio to butterly)')
+# plt.yscale('log')
+# plt.ylim(0.1,10)
+# plt.grid()
+# plt.show()
 
 
-plt.errorbar(z/1000,A/new_coeff,
-             yerr=Ae/new_coeff, capsize=5,
-             label='WFS slope of HADM',marker='o',ls='')
-plt.errorbar(z/1000,B/new_coeff,
-         yerr=Be/new_coeff, capsize=5,
-         label='WFS slope of GLATM',marker='o',ls='')
-plt.errorbar(z/1000,C/new_coeff,
-             yerr=Ce/new_coeff, capsize=5,
-             label='measured as : influence method',ls='',marker='o')
-plt.errorbar(z/1000,D/new_coeff,
-             yerr=De/new_coeff, capsize=5,
-             label='measured as : slope method',ls='',marker='o')
-plt.legend()
-plt.xlabel('H_HA (km)')
-plt.ylabel('measure as coef (ratio to butterly)')
-plt.yscale('log')
-plt.ylim(0.1,10)
-plt.grid()
-plt.show()
+# plt.errorbar(z/1000,A/new_coeff,
+#              yerr=Ae/new_coeff, capsize=5,
+#              label='WFS slope of HADM',marker='o',ls='')
+# plt.errorbar(z/1000,B/new_coeff,
+#          yerr=Be/new_coeff, capsize=5,
+#          label='WFS slope of GLATM',marker='o',ls='')
+# plt.errorbar(z/1000,C/new_coeff,
+#              yerr=Ce/new_coeff, capsize=5,
+#              label='measured as : influence method',ls='',marker='o')
+# plt.errorbar(z/1000,D/new_coeff,
+#              yerr=De/new_coeff, capsize=5,
+#              label='measured as : slope method',ls='',marker='o')
+# plt.legend()
+# plt.xlabel('H_HA (km)')
+# plt.ylabel('measure as coef (ratio to butterly)')
+# plt.yscale('log')
+# plt.ylim(0.1,10)
+# plt.grid()
+# plt.show()
 
-plt.errorbar(expect_AS,A/new_coeff,
-             yerr=Ae/new_coeff, capsize=5,
-             label='WFS slope of HADM',marker='o',ls='')
-plt.errorbar(expect_AS,B/new_coeff,
-         yerr=Be/new_coeff, capsize=5,
-         label='WFS slope of GLATM',marker='o',ls='')
-plt.errorbar(expect_AS,C/new_coeff,
-             yerr=Ce/new_coeff, capsize=5,
-             label='measured as : influence method',ls='',marker='o')
-plt.errorbar(expect_AS,D/new_coeff,
-             yerr=De/new_coeff, capsize=5,
-             label='measured as : slope method',ls='',marker='o')
-plt.legend()
-plt.xlabel('expect as')
-plt.ylabel('measure as coef (ratio to butterly)')
-plt.yscale('log')
-plt.xscale('log')
-plt.ylim(0.1,10)
-plt.grid()
-plt.show()
+# plt.errorbar(expect_AS,A/new_coeff,
+#              yerr=Ae/new_coeff, capsize=5,
+#              label='WFS slope of HADM',marker='o',ls='')
+# plt.errorbar(expect_AS,B/new_coeff,
+#          yerr=Be/new_coeff, capsize=5,
+#          label='WFS slope of GLATM',marker='o',ls='')
+# plt.errorbar(expect_AS,C/new_coeff,
+#              yerr=Ce/new_coeff, capsize=5,
+#              label='measured as : influence method',ls='',marker='o')
+# plt.errorbar(expect_AS,D/new_coeff,
+#              yerr=De/new_coeff, capsize=5,
+#              label='measured as : slope method',ls='',marker='o')
+# plt.legend()
+# plt.xlabel('expect as')
+# plt.ylabel('measure as coef (ratio to butterly)')
+# plt.yscale('log')
+# plt.xscale('log')
+# plt.ylim(0.1,10)
+# plt.grid()
+# plt.show()
 
 
 # COEFFA,COEFFAe = np.average(A[~np.isnan(A)],weights=1/(Ae[~np.isnan(A)])**2,returned=True)
@@ -3289,26 +3708,26 @@ plt.show()
 
 # plt.show()
 
-COEFFA,COEFFAe = np.average(A[~np.isnan(A)],weights=1/(Ae[~np.isnan(A)])**2,returned=True)
-COEFFAe = COEFFAe**-0.5
+# COEFFA,COEFFAe = np.average(A[~np.isnan(A)],weights=1/(Ae[~np.isnan(A)])**2,returned=True)
+# COEFFAe = COEFFAe**-0.5
 
-COEFFB,COEFFBe = np.average(B[~np.isnan(B)],weights=1/(Be[~np.isnan(B)])**2,returned=True)
-COEFFBe = COEFFBe**-0.5
+# COEFFB,COEFFBe = np.average(B[~np.isnan(B)],weights=1/(Be[~np.isnan(B)])**2,returned=True)
+# COEFFBe = COEFFBe**-0.5
 
-COEFFC,COEFFCe = np.average(measured_coeff,weights=1/measured_coeff_error**2,returned=True)
-COEFFCe = COEFFCe**-0.5
+# COEFFC,COEFFCe = np.average(measured_coeff,weights=1/measured_coeff_error**2,returned=True)
+# COEFFCe = COEFFCe**-0.5
 
-COEFFD,COEFFDe = np.average(D[1:][~np.isnan(D[1:])],weights=1/(De[1:][~np.isnan(D[1:])])**2,returned=True)
-COEFFDe = COEFFDe**-0.5
+# COEFFD,COEFFDe = np.average(D[1:][~np.isnan(D[1:])],weights=1/(De[1:][~np.isnan(D[1:])])**2,returned=True)
+# COEFFDe = COEFFDe**-0.5
 
-plt.errorbar(['WFS Slope of HADM','WFS Slope of GLATM','Influence Method','Slope Method'],
-             [COEFFA,COEFFB,COEFFC,COEFFD],
-             yerr=[COEFFAe,COEFFBe,COEFFCe,COEFFDe],
-             capsize=5, marker='o',ls='')
-plt.hlines([new_coeff],0,3)
-plt.ylabel('Coefficient')
+# plt.errorbar(['WFS Slope of HADM','WFS Slope of GLATM','Influence Method','Slope Method'],
+#              [COEFFA,COEFFB,COEFFC,COEFFD],
+#              yerr=[COEFFAe,COEFFBe,COEFFCe,COEFFDe],
+#              capsize=5, marker='o',ls='')
+# plt.hlines([new_coeff],0,3)
+# plt.ylabel('Coefficient')
 
-plt.show()
+# plt.show()
 
 
 

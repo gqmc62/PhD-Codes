@@ -1816,23 +1816,21 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     plt.yscale('log')
     plt.legend()
     plt.xlabel('separation (m)')
-    plt.ylabel('structure function (radian^2)')
+    plt.ylabel('structure function (rad$^2$)')
     plt.xlim(radius.min(),radius.max()*2)
     plt.ylim(np.nanmin(theoretical_structure_function)/10,
              np.nanmax(theoretical_structure_function)*10)
-    plt.title('{:d}'.format(RANDOM)
-            + 'structure_function'
-            + 'D{:.0f}cm'.format(D*100)
-            + 'r0{:.0f}cm'.format(r0*100)
-            + 'L0{:.2f}m'.format(L0))
+    # plt.title('{:d}'.format(RANDOM)
+    #         + 'structure_function\n'
+    #         + SAVENAME)
     if saveFigure == True:
-        plt.savefig(SAVENAME
+        plt.savefig(SAVENAME[:-5]
                 + '_structure_function'
-                + '.png')
+                + '.pdf', bbox_inches='tight')
     plt.show()
     
-    mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
-    error_mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
+    mean_PSD_x = ((PSD)[:,int(N/2 + 1) :,int(N/2) ]).mean(0)
+    error_mean_PSD_x = ((PSD.T)[:,int(N/2 + 1) :,int(N/2) ]).std(0)/np.sqrt(RANDOM)
     mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
     error_mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).std(0)/np.sqrt(RANDOM)
     theoretical_PSD = psd_function(r0, N, pixel_scale, L0, l0)[int(N/2),int(N/2 + 1) : ]
@@ -1842,6 +1840,7 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
              label='von Karman PSD', ls='-', marker='')
     plt.plot(f, kolmogorov_PSD,
              label='Kolmogorov PSD', ls=':', marker='')
+    # print(f.shape,mean_PSD_x.shape,error_mean_PSD_x.shape,PSD.shape)
     plt.errorbar(f, mean_PSD_x,
                  yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
                  label='measured x-axis',alpha=ALPHA2)
@@ -1858,17 +1857,15 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('spatial frequency (1/m)')
-    plt.ylabel('phase structure function (??radian??)')
-    plt.title('{:d}'.format(RANDOM)
-            + 'PSD'
-            + 'D{:.0f}cm'.format(D*100)
-            + 'r0{:.0f}cm'.format(r0*100)
-            + 'L0{:.2f}m'.format(L0))
+    plt.ylabel('phase structure function (rad$^2$ m$^2$)')
+    # plt.title('{:d}'.format(RANDOM)
+    #         + 'PSD\n'
+    #         + SAVENAME)
     plt.legend()
     if saveFigure == True:
-        plt.savefig(SAVENAME
+        plt.savefig(SAVENAME[:-5]
                 + '_PSD'
-                + '.png')
+                + '.pdf', bbox_inches='tight')
     plt.show()
     
     variance_ZernikeCoeff = np.var(ZernikeCoeff, ddof=1, axis=0)[1:]
@@ -1890,18 +1887,16 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
                  label='abs difference', marker='o', ls='', capsize=5)
     plt.yscale('log')
     plt.xlabel('zernike modes')
-    plt.ylabel('variance of zernike coefficient')
+    plt.ylabel('variance of zernike coefficient (rad$^2$)')
     plt.legend()
     plt.ylim(np.nanmin(theoretical_variance_ZernikeCoeff)/10, np.nanmax(theoretical_variance_ZernikeCoeff)*10)
-    plt.title('{:d}'.format(RANDOM)
-            + 'ZernikeVariances'
-            + 'D{:.0f}cm'.format(D*100)
-            + 'r0{:.0f}cm'.format(r0*100)
-            + 'L0{:.2f}m'.format(L0))
+    # plt.title('{:d}'.format(RANDOM)
+    #         + 'ZernikeVariances\n'
+    #         + SAVENAME)
     if saveFigure == True:
-        plt.savefig(SAVENAME
+        plt.savefig(SAVENAME[:-5]
                 + '_ZernikeCoeff'
-                + '.png')
+                + '.pdf', bbox_inches='tight')
     plt.show()
     
     if saveFile == True:
@@ -2013,7 +2008,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     if saveFigure == True:
         plt.savefig(SAVENAME
                 + '_structure_function'
-                + '.png')
+                + '.pdf')
     plt.show()
     
     mean_PSD_x = ((PSD.T)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
@@ -2043,7 +2038,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('spatial frequency (1/m)')
-    plt.ylabel('phase structure function (??radian??)')
+    plt.ylabel('psd phase (rad^2 m^2)')
     plt.title('{:d}'.format(RANDOM)
             + 'PSD'
             + 'D{:.0f}cm'.format(D*100)
@@ -2053,7 +2048,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     if saveFigure == True:
         plt.savefig(SAVENAME
                 + '_PSD'
-                + '.png')
+                + '.pdf')
     plt.show()
     
     variance_ZernikeCoeff = np.var(ZernikeCoeff, ddof=1, axis=0)[1:]
@@ -2086,7 +2081,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     if saveFigure == True:
         plt.savefig(SAVENAME
                 + '_ZernikeCoeff'
-                + '.png')
+                + '.pdf')
     plt.show()
     
     if saveFile == True:
