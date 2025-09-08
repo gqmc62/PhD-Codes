@@ -15,21 +15,25 @@ from soapy import soapy
 
 import numpy as np
 
-TRIAL = 1 #50    0,1,2,3,6,10,16,20
+new_svd_condition = float(0.01)    
+
+TRIAL = 50 #50    0,1,2,3,6,10,16,20
 LOOP = 5 #100
-z_limit = 10e3 #5e3 #25e3 # np.inf#
-CASE_STUDY = np.array([19])#np.array([0,12,16],dtype=int)#14 22 9 12 
+z_limit = np.inf# 10e3 #5e3 #25e3 # np.inf#
+CASE_STUDY = np.array([2,6,8,11,15,22])#np.array([0,9,12,14,16,19],dtype=int)#14 22 9 12 
 SKIP = np.array([],dtype=int)
-newIMat = True#False#
-PLOT = False#True#
+newIMat = False#True#
+PLOT = False#True#True#
+given_seed = True
+# given_seed = False
 
-# original_name = 'bad_IM_A' # 10 nxsubap
-# original_name = 'bad_IM_B' # 8 nxsubap
-# original_name = 'bad_IM_C'# 6 nxsubap
+original_name = 'bad_IM_A' # 10 nxsubap 0.4
+# original_name = 'bad_IM_B' # 8 nxsubap 0.4
+# original_name = 'bad_IM_C'# 6 nxsubap 0.4
 
-original_name = 'bad_IM_A2' # 8 nxsubap
-# original_name = 'bad_IM_B2' # 6 nxsubap
-# original_name = 'bad_IM_C2'# 4 nxsubap
+# original_name = 'bad_IM_A2' # 10 nxsubap 0.5m
+# original_name = 'bad_IM_B2' # 6 nxsubap 0.3m
+# original_name = 'bad_IM_C2'# 4 nxsubap 0.2m
 
 wvl = 500e-9
 # aber_L0 = 8
@@ -468,15 +472,16 @@ aber_z_list_original = np.loadtxt('z_list_new_AS.txt').flatten()
 aber_r0_list = np.concatenate([np.array([np.inf]),aber_r0_list_original])
 aber_z_list = np.concatenate([np.array([0]),aber_z_list_original])
 
+if given_seed == True:
+    
+    hdu = fits.open('ATM_SEEDS.fits')
+    ATM_SEEDS = hdu[0].data
+    hdu.close()
+    hdu = fits.open('aberration_seed.fits')
+    aberation_seed = hdu[0].data
+    hdu.close()
 
-hdu = fits.open('ATM_SEEDS.fits')
-ATM_SEEDS = hdu[0].data
-hdu.close()
-hdu = fits.open('aberration_seed.fits')
-aberation_seed = hdu[0].data
-hdu.close()
-
-
+    # aberation_seed = np.array([ 681362132, 1912631052, 2026820200, 1483138070,  583733392, 1805998251, 1889699555,  584259759,  103018972,  899371596])
 
 
 
@@ -498,13 +503,14 @@ if not os.path.exists(original_home + '/' + 'IMCC_' + original_name):
 
 
 for i_aber_z_list in np.arange(len(aber_z_list)):
+    # print(i_aber_z_list)
     if (i_aber_z_list != CASE_STUDY).all() and (CASE_STUDY.size > 0):
         continue
     if (i_aber_z_list == SKIP).any():
         continue
     if aber_z_list[i_aber_z_list] >= z_limit:# 25e3 # too high for common dm elevation
         break
-
+    print(i_aber_z_list)
     ##################################################################################
     # setting parameters for each case
     
@@ -524,7 +530,8 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     IM_rytov = rytov_number(wvl, aber_r0, aberrationHeight)
     dsub = (original_config['Telescope']['telDiam']/original_config['WFS'][0]['nxSubaps'])
     IM_AS = displacement(wvl, dsub, aber_r0, aberrationHeight)
-    
+    # print(IM_rytov,IM_AS)
+    # continue
     # print(aber_r0,aberrationHeight,IM_rytov,IM_AS*100)
 
     
@@ -541,7 +548,8 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     # mode_list = np.arange(temp2 - 1 - 2) + 2 + 2#np.arange(91 - 1 - 2) + 2 + 2
     # MODE = mode_list.shape[0]
     # ATM_SEEDS = np.arange(TRIAL)
-    # ATM_SEEDS = np.random.randint(0,2**31,size=TRIAL)
+    if given_seed == False:
+        ATM_SEEDS = np.random.randint(0,2**31,size=TRIAL)
     # ATM_SEEDS = np.array([1457885706],dtype=int)
     
 
@@ -563,8 +571,8 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
             #new_config['DM'][idm]['nollMode'] = int(mode_list[-1])
             new_config['nIters'] = LOOP
             new_config['DM'][idm]['altitude'] = float(aberrationHeight)
-
-    
+            if new_svd_condition is not None:
+                new_config['Reconstructor']['svdConditioning'] = new_svd_condition
     
     new_name = new_config['simName']
     with open(new_name + '.yaml','w') as file:
@@ -665,8 +673,10 @@ for i_aber_z_list in np.arange(len(aber_z_list)):
     CC = np.zeros((TRIAL,
                     perfect_IM.shape[1],
                     perfect_IM.shape[0]),dtype=float)
+    
+    if given_seed == False:
     # aberation_seed = np.arange(TRIAL)
-    # aberation_seed = np.random.randint(0,2**31,size=TRIAL)
+        aberation_seed = np.random.randint(0,2**31,size=TRIAL)
     # aberation_seed = np.array([667518184],dtype=int)
 
     ABERATION_Z = np.zeros((TRIAL,

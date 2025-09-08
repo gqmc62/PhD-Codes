@@ -11,6 +11,28 @@ from matplotlib import pyplot as plt
 import pickle
 import os
 
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 D = 2
 L0 = 20
 r0 = 0.05
@@ -50,9 +72,10 @@ plt.plot(x, kolmogorov_variance_ZernikeCoeff, label='Kolmogorov',color='b')
 plt.legend()
 
 plt.yscale('log')
-plt.xlabel('Zernike Modes')
-plt.ylabel('Variances of Coefficient (rad$^2$)')
-plt.title('Zernike Mode Decompositions')
-plt.savefig(name + '.png', bbox_inches='tight')
-plt.savefig(name + '.eps', bbox_inches='tight')
+plt.xlabel('Zernike modes')
+plt.ylabel('Variances of coefficient (rad$^2$)')
+# plt.title('Zernike Mode Decompositions')
+plt.savefig(name)
+# plt.savefig(name + '.png', bbox_inches='tight')
+# plt.savefig(name + '.eps', bbox_inches='tight')
 plt.show()

@@ -11,6 +11,29 @@ from matplotlib import pyplot as plt
 import os
 import pickle
 
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+
+
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 D = 4
 L0 = 4
 r0 = 0.05
@@ -50,7 +73,7 @@ plt.plot(x, theoretical_structure_function, label='von Karman',color='r')
 plt.plot(x, kolmogorov_structure_function, label='Kolmogorov',color='b')
 plt.vlines([L0],
            0,np.nanmax([theoretical_structure_function,kolmogorov_structure_function]),
-           ls='--', label='L0',color='c')
+           ls='--', label='$L_0$',color='c')
 # plt.hlines([np.pi**2],pixel_scale,D,label='$\pi^2$')
 # plt.vlines([r0],
 #            0,np.nanmax([theoretical_structure_function,kolmogorov_structure_function]),
@@ -59,8 +82,8 @@ plt.legend()
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('Separation (m)')
-plt.ylabel('Variance of Phase Difference (rad$^2$)')
-plt.title('Structure Functions')
-plt.savefig(name + '.eps',bbox_inches='tight')
-plt.savefig(name + '.png',bbox_inches='tight')
+plt.ylabel('Structure function (rad$^2$)')
+# plt.title('Structure Functions')
+# plt.savefig(name + '.eps',bbox_inches='tight')
+plt.savefig(name + '.pdf',bbox_inches='tight')
 plt.show()

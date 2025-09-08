@@ -14,6 +14,27 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import pickle
 
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+
+fontsize = 10
+figsize = [5,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
 
 D = 1
 delta = 0.05/16
@@ -86,27 +107,27 @@ plt.pcolor(x[::2],x[::2],phase_GL[::2,::2])
 plt.axis('square')
 plt.colorbar()
 plt.xlabel('position (m)')
-plt.title('phase @ z=0km (rad)')
-plt.savefig(name + '_phase0' + '.eps',bbox_inches='tight',dpi=100)
-plt.savefig(name + '_phase0' + '.png',bbox_inches='tight',dpi=100)
+# plt.title('phase @ z=0km (rad)')
+# plt.savefig(name + '_phase0' + '.eps',bbox_inches='tight',dpi=100)
+plt.savefig(name + '_phase0' + '.png',bbox_inches='tight')
 plt.show()
 
 plt.pcolor(x[::2],x[::2],phase_HA[::2,::2])
 plt.axis('square')
 plt.colorbar()
 plt.xlabel('position (m)')
-plt.title('phase @ z={:.0f}km (rad)'.format(z/1e3))
-plt.savefig(name + '_phase_z' + '.eps',bbox_inches='tight',dpi=100)
-plt.savefig(name + '_phase_z' + '.png',bbox_inches='tight',dpi=100)
+# plt.title('phase @ z={:.0f}km (rad)'.format(z/1e3))
+# plt.savefig(name + '_phase_z' + '.eps',bbox_inches='tight',dpi=100)
+plt.savefig(name + '_phase_z' + '.png',bbox_inches='tight')
 plt.show()
 
 plt.pcolor(x[::2],x[::2],intensity_HA[::2,::2])
 plt.axis('square')
 plt.colorbar()
 plt.xlabel('position (m)')
-plt.title('intensity @ z={:.0f}km (rad)'.format(z/1e3))
-plt.savefig(name + '_intensity_z' + '.eps',bbox_inches='tight',dpi=100)
-plt.savefig(name + '_intensity_z' + '.png',bbox_inches='tight',dpi=100)
+# plt.title('intensity @ z={:.0f}km (rad)'.format(z/1e3))
+# plt.savefig(name + '_intensity_z' + '.eps',bbox_inches='tight',dpi=100)
+plt.savefig(name + '_intensity_z' + '.png',bbox_inches='tight')
 plt.show()
 
 
@@ -119,7 +140,7 @@ log_amplitude_variance = 0.563 * k**(7./6.) * cn2dz * z**(5./6.)
 true_log_amplitude_variance = np.var(np.log(np.sqrt(intensity_HA)))
 
 plt.clf()
-fig,axs = plt.subplots(1,3, sharex=True, sharey=True, squeeze=True)
+fig,axs = plt.subplots(1,3, sharex=True, sharey=True, squeeze=True,figsize=(10,5))
 
 im = axs[0].pcolor(x[::2],x[::2],phase_GL[::2,::2])
 # fig[0].colorbar()
@@ -147,7 +168,7 @@ divider = make_axes_locatable(axs[1])
 cax = divider.append_axes("right", size="5%", pad=0.05)   
 plt.colorbar(im, cax=cax)
 
-im = axs[2].pcolor(x[::2],x[::2],intensity_HA[::2,::2],vmax=2,vmin=0)
+im = axs[2].pcolor(x[::2],x[::2],intensity_HA[::2,::2])
 # fig[1].colorbar()
 # axs[2].set_xlabel('position (m)')
 # axs[2].set_title('I @ z={:.0f}km (norm)'.format(z/1000))
@@ -156,7 +177,7 @@ axs[2].set_xlabel('(c)')
 axs[2].set_xticks([])
 axs[2].set_yticks([])
 
-axs[1].set_title('$\sigma_\chi^2$={:.2f} rad$^2$'.format(true_log_amplitude_variance))
+# axs[1].set_title('$\sigma_\chi^2$={:.2f} rad$^2$'.format(true_log_amplitude_variance))
 
 divider = make_axes_locatable(axs[2])
 cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -166,7 +187,7 @@ plt.tight_layout()
 
 # plt.gcf ().set_size_inches (1.8, 5.4)
 
-plt.savefig(name + '_combined' + '.eps',bbox_inches='tight')
+# plt.savefig(name + '_combined' + '.eps',bbox_inches='tight')
 plt.savefig(name + '_combined' + '.png',bbox_inches='tight')
 
 print(log_amplitude_variance,np.var(np.log(np.sqrt(intensity_HA))))

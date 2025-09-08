@@ -27,6 +27,27 @@ import my_phasescreen as mps
 os.chdir(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter3Plots')
 
 
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 ###############################################################################
 ########################################################################
 

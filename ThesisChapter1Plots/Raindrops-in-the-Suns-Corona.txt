@@ -1,0 +1,133 @@
+Filename: Prominence 2.png
+Caption: This image of a solar prominence is a snapshot of a 19-minute time-lapse movie showing how plasma “dances” and twists with the Sun’s magnetic field.
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+Filename: Prominence 2 Scale.png
+Caption (With Scale Bar): This image of a solar prominence is a snapshot of a 19-minute time-lapse movie showing how plasma “dances” and twists with the Sun’s magnetic field.
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+Filename: Prominence 2 Video.mp4
+Caption: This time-lapse movie of a solar prominence shows how plasma “dances” and twists with the Sun’s magnetic field.
+
+This video was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The video shows the hydrogen-alpha light emitted by the solar plasma. The video is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+===================================================================================
+Filename: Prominence 1.png
+Caption: This image of a prominence above the solar surface is a snapshot of a 4-minute time-lapse movie that reveals its rapid, fine, and turbulent restructuring with unprecedented detail. 
+
+The Sun’s fluffy-looking surface is covered by “spicules”, short-lived plasma
+jets, whose creation is still subject of scientific debate. The streaks on the right of this image are coronal rain falling down onto the Sun’s surface.
+
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+
+Filename: Prominence 1 Scale.png
+Caption (With Scale Bar): This image of a prominence above the solar surface is a snapshot of a 4-minute time-lapse movie that reveals its rapid, fine, and turbulent restructuring with unprecedented detail. 
+
+The Sun’s fluffy-looking surface is covered by “spicules”, short-lived plasma
+jets, whose creation is still subject of scientific debate. The streaks on the right of this image are coronal rain falling down onto the Sun’s surface.
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+
+Filename: Prominence 1 Video.mp4
+Caption: This time-lapse video of a prominence above the solar surface reveals its rapid, fine, and turbulent restructuring with unprecedented detail. 
+
+The Sun’s fluffy-looking surface is covered by “spicules”, short-lived plasma
+jets, whose creation is still subject of scientific debate. The streaks on the right of this image are coronal rain falling down onto the Sun’s surface.
+
+This video was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The video shows the hydrogen-alpha light emitted by the solar plasma. The video is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+===================================================================================
+
+Filename: Plasmoid.png
+Caption:
+This image is a snapshot from a 16-minute time-lapse movie showing the formation and collapse of a complexly shaped plasma stream traveling at almost 100 kilometers per seconds in front of a coronal loop system. This is likely the first time such a stream, which the scientists refer to as “plasmoid”, has been observed, leaving them wondering about the physical explanation of the observed dynamics. 
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+
+Filename: Plasmoid Scale.png
+Caption (With Scale Bar): This image is a snapshot from a 16-minute time-lapse movie showing the formation and collapse of a complexly shaped plasma stream traveling at almost 100 kilometers per seconds in front of a coronal loop system. This is likely the first time such a stream, which the scientists refer to as “plasmoid”, has been observed, leaving them wondering about the physical explanation of the observed dynamics. 
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+
+Filename: Plasmoid Video
+Caption: This time-lapse movie shows the formation and collapse of a complexly shaped plasma stream traveling at almost 100 kilometers per seconds in front of a coronal loop system. This is likely the first time such a stream, which the scientists refer to as “plasmoid”, has been observed, leaving them wondering about the physical explanation of the observed dynamics. 
+
+This video was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The video shows the hydrogen-alpha light emitted by the solar plasma. The video is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+===================================================================================
+
+
+Filename: Coronal Rain.png
+Caption: Coronal rain forms when hotter plasma in the Sun’s corona cools down and becomes denser. Like raindrops on Earth, coronal rain is pulled down to the surface by gravity. Because the plasma is electrically charged, it follows the magnetic field lines, which make huge arches/loops, instead of falling in a straight line. 
+
+This image is a snapshot from a 23-minute time-lapse video which is comprised of the highest resolution
+images ever made of coronal rain. The scientists show in the paper that the strands
+can be narrower than 20 kilometers.
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+
+Filename: Coronal Rain 2.png
+Caption (With Scale Bar): Coronal rain forms when hotter plasma in the Sun’s corona cools down and becomes denser. Like raindrops on Earth, coronal rain is pulled down to the surface by gravity. Because the plasma is electrically charged, it follows the magnetic field lines, which make huge arches/loops, instead of falling in a straight line. 
+
+This image is a snapshot from a 23-minute time-lapse video which is comprised of the highest resolution
+images ever made of coronal rain. The scientists show in the paper that the strands
+can be narrower than 20 kilometers.
+
+This image was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The image shows the hydrogen-alpha light emitted by the solar plasma. The image is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF 
+
+
+Filename: Coronal Rain Video.mp4
+Caption: Coronal rain forms when hotter plasma in the Sun’s corona cools down and becomes denser. Like raindrops on Earth, coronal rain is pulled down to the surface by gravity. Because the plasma is electrically charged, it follows the magnetic field lines, which make huge arches/loops, instead of falling in a straight line. 
+
+This time-lapse video is composed of the highest resolution images ever made of coronal rain. The scientists show in the paper that the strands can be narrower than 20 kilometers.
+
+This video was taken by the Goode Solar Telescope at Big Bear Solar Observatory using the new coronal adaptive optics system Cona. The video shows the hydrogen-alpha light emitted by the solar plasma. The video is artificially colorized, yet based on the color of hydrogen-alpha light, and darker color is brighter light.
+
+Credit: Schmidt et al./NJIT/NSO/AURA/NSF
+
+=======================================================================================
+Filename: GST.jpg
+Caption: The 1.6-meter Goode Solar Telescope (GST), located in Big Bear Lake, California, observing the Sun.
+The steady temperature of the water surface helps keep the air around the telescope calm, reducing the optical effects of turbulent air that degrades the telescope’s images of the Sun and that the adaptive optics further removes to achieve the maximum image detail.
+
+The GST is the second-largest solar telescope in the world and home to several instruments that scientists use to analyze the light from the Sun to infer physical processes in the Sun.
+
+The NSF National Solar Observatory and the Big Bear Solar Observatory have collaborated for over two decades to develop and advance adaptive optics technologies for solar observations. The GST has been a critical facility to develop and test prototypes for the U.S. National Science Foundation’s 4-meter Daniel K. Inouye Solar Telescope, which took over as the world’s largest solar telescope in 2019. GST’s first-ever coronal adaptive optics system is the latest product of this successful and pioneering collaboration.
+
+Credit: Sergey Shumko
+
+
+Filename: Cona Coronal Adaptive Optics System.png
+Caption: The coronal adaptive optics system Cona at the Goode Solar Telescope. The black square box in the center illuminated and reflecting the sunlight is the adaptive mirror that corrects the images of the Sun.
+
+Credit: Dirk Schmidt

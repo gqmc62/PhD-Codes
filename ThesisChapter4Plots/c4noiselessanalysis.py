@@ -11,7 +11,7 @@ import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 
-with open('NoiselessCircularPupilSlopes.pkl','rb') as file:
+with open(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots\Data\NoiselessCircularPupilSlopes.pkl','rb') as file:
   data = pickle.load(file)
 
 Ig_SLOPE = data['Ig_SLOPE']

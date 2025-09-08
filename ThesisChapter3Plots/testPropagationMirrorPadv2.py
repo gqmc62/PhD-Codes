@@ -1,9 +1,38 @@
 import numpy as np
-rms = np.zeros((3,3),dtype=float)
-for i_z in range(3):
-    z = [1e2,1e3,1e4][i_z]
-    for i_r0 in range(3):
-        r0 = [0.02,0.05,0.1][i_r0]
+
+
+datapoint = 10
+
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+from tqdm import tqdm
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
+r0_list = [0.02,0.05,0.1]
+
+rms = np.zeros((datapoint,3),dtype=float)
+rms_error = np.copy(rms)
+for i_z in tqdm(range(datapoint)):
+    z = np.logspace(2,4,datapoint)[i_z]
+    for i_r0 in range(len(r0_list)):
+        r0 = r0_list[i_r0]
         # -*- coding: utf-8 -*-
         """
         Created on Mon Feb  5 17:44:11 2024
@@ -335,12 +364,14 @@ for i_z in range(3):
         scrn = IF3.scrn
         scrn -= scrn.mean()
         
-        plt.pcolor(x,x,np.angle(np.exp(1j*scrn[prop_pad:-prop_pad,prop_pad:-prop_pad])))
-        plt.colorbar()
-        plt.axis('square')
-        plt.xlabel('position (m)')
-        plt.title('phase before propagation')
-        plt.show()
+        if z == 10000:
+            plt.figure(figsize=(5,4))
+            plt.pcolor(x,x,np.angle(np.exp(1j*scrn[prop_pad:-prop_pad,prop_pad:-prop_pad])))
+            plt.colorbar()
+            plt.axis('square')
+            plt.xlabel('Position (m)')
+            # plt.title('phase before propagation')
+            plt.show()
         
         
         ###############################################################################
@@ -354,59 +385,64 @@ for i_z in range(3):
         phase_prop_pad = np.angle(prop_pad_Uout)
         
         x = (np.arange(N)- N//2) * delta
-        plt.pcolor(x,x,phase_prop_pad)
-        plt.colorbar()
-        plt.xlabel('position (m)')
-        plt.axis('square')
-        plt.title('phase_prop_pad (rad)')
-        # plt.savefig('sample_prop_phase_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
-        plt.show()
+        if z == 10000:
+            plt.figure(figsize=(5,4))
+            plt.pcolor(x,x,phase_prop_pad)
+            plt.colorbar()
+            plt.xlabel('Position (m)')
+            plt.axis('square')
+            # plt.title('phase_prop_pad (rad)')
+            # plt.savefig('sample_prop_phase_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
+            plt.show()
         
-        plt.pcolor(x,x,intensity_prop_pad,vmax=2,vmin=0)
-        plt.colorbar()
-        plt.axis('square')
-        plt.xlabel('position (m)')
-        plt.title('normalized intensity_prop_pad')
-        # plt.savefig('sample_prop_intensity_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
-        plt.show()
+            plt.figure(figsize=(5,4))
+            plt.pcolor(x,x,intensity_prop_pad,vmax=2,vmin=0)
+            plt.colorbar()
+            plt.axis('square')
+            plt.xlabel('Position (m)')
+            # plt.title('normalized intensity_prop_pad')
+            # plt.savefig('sample_prop_intensity_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
+            plt.show()
         
         ###############################################################################
         
-        PSDUprop = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(prop_pad_Uout)):
-            PSDUprop[i] = mps.get_PSD(prop_pad_Uout[i],delta)
-        PSDUprop[:] += PSDUprop[:,::-1]
-        PSDUprop /= 2.
+        if z == 10000:
         
-        PSDphaseprop = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(phase_prop_pad)):
-            PSDphaseprop[i] = mps.get_PSD(phase_prop_pad[i],delta)
-        PSDphaseprop[:] += PSDphaseprop[:,::-1]
-        PSDphaseprop /= 2.
-        
-        PSDintensityprop = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(intensity_prop_pad)):
-            PSDintensityprop[i] = mps.get_PSD(intensity_prop_pad[i],delta)
-        PSDintensityprop[:] += PSDintensityprop[:,::-1]
-        PSDintensityprop /= 2.
-        
-        SFphaseprop = np.zeros((N,N), dtype=float)
-        # for i in np.arange(N):
-        #     SFphaseprop[i] = mps.get_structure_function(np.roll(phase_prop_pad,(i),axis=(0)))
-        # SFphaseprop = (phase_prop_pad[:,0] - phase_prop_pad[:,:])**2
-        for i in np.arange(N):
-            SFphaseprop[i] = np.angle((prop_pad_Uout[i,i] / np.roll(prop_pad_Uout[i],(-i),axis=(0))))**2
+            PSDUprop = np.zeros((N,N),dtype=float)
+            for i in np.arange(len(prop_pad_Uout)):
+                PSDUprop[i] = mps.get_PSD(prop_pad_Uout[i],delta)
+            PSDUprop[:] += PSDUprop[:,::-1]
+            PSDUprop /= 2.
             
-        
-        
-        
-        SFintensityprop = np.zeros((N,N), dtype=float)
-        # for i in np.arange(N):
-        #     SFintensityprop[i] = mps.get_structure_function(np.roll(intensity_prop_pad,(i),axis=(0)))
-        # SFintensityprop = (intensity_prop_pad[:,0] - intensity_prop_pad[:,:])**2
-        for i in np.arange(N):
-            SFintensityprop[i] = (intensity_prop_pad[i,i] - np.roll(intensity_prop_pad[i],(-i),axis=(0)))**2
+            PSDphaseprop = np.zeros((N,N),dtype=float)
+            for i in np.arange(len(phase_prop_pad)):
+                PSDphaseprop[i] = mps.get_PSD(phase_prop_pad[i],delta)
+            PSDphaseprop[:] += PSDphaseprop[:,::-1]
+            PSDphaseprop /= 2.
             
+            PSDintensityprop = np.zeros((N,N),dtype=float)
+            for i in np.arange(len(intensity_prop_pad)):
+                PSDintensityprop[i] = mps.get_PSD(intensity_prop_pad[i],delta)
+            PSDintensityprop[:] += PSDintensityprop[:,::-1]
+            PSDintensityprop /= 2.
+            
+            SFphaseprop = np.zeros((N,N), dtype=float)
+            # for i in np.arange(N):
+            #     SFphaseprop[i] = mps.get_structure_function(np.roll(phase_prop_pad,(i),axis=(0)))
+            # SFphaseprop = (phase_prop_pad[:,0] - phase_prop_pad[:,:])**2
+            for i in np.arange(N):
+                SFphaseprop[i] = np.angle((prop_pad_Uout[i,i] / np.roll(prop_pad_Uout[i],(-i),axis=(0))))**2
+                
+            
+            
+            
+            SFintensityprop = np.zeros((N,N), dtype=float)
+            # for i in np.arange(N):
+            #     SFintensityprop[i] = mps.get_structure_function(np.roll(intensity_prop_pad,(i),axis=(0)))
+            # SFintensityprop = (intensity_prop_pad[:,0] - intensity_prop_pad[:,:])**2
+            for i in np.arange(N):
+                SFintensityprop[i] = (intensity_prop_pad[i,i] - np.roll(intensity_prop_pad[i],(-i),axis=(0)))**2
+                
         
         
         ###############################################################################
@@ -1118,205 +1154,229 @@ for i_z in range(3):
         intensity_atm_pad = np.abs(atm_pad_Uout)**2
         phase_atm_pad = np.angle(atm_pad_Uout)
         
-        x = (np.arange(N)- N//2) * delta
-        plt.pcolor(x,x,phase_atm_pad)
-        plt.colorbar()
-        plt.xlabel('position (m)')
-        plt.axis('square')
-        plt.title('phase_atm_pad (rad)' + '\n' + TAG)
-        # plt.savefig('sample_prop_phase_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
-        plt.show()
+        if z == 10000:
         
-        plt.pcolor(x,x,intensity_atm_pad,vmax=2,vmin=0)
-        plt.colorbar()
-        plt.axis('square')
-        plt.xlabel('position (m)')
-        plt.title('normalized intensity_atm_pad' + '\n' + TAG)
-        # plt.savefig('sample_prop_intensity_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
-        plt.show()
+            x = (np.arange(N)- N//2) * delta
+            plt.figure(figsize=(5,4))
+            plt.pcolor(x,x,phase_atm_pad)
+            plt.colorbar()
+            plt.xlabel('Position (m)')
+            plt.axis('square')
+            # plt.title('phase_atm_pad (rad)' + '\n' + TAG)
+            # plt.savefig('sample_prop_phase_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
+            plt.savefig('phase-shortcut.png',dpi=600,bbox_inches='tight')
+            plt.show()
+            
+            plt.figure(figsize=(5,4))
+            plt.pcolor(x,x,intensity_atm_pad,vmax=2,vmin=0)
+            plt.colorbar()
+            plt.axis('square')
+            plt.xlabel('Position (m)')
+            plt.savefig('intensity-shortcut.png',dpi=600,bbox_inches='tight')
+            # plt.title('normalized intensity_atm_pad' + '\n' + TAG)
+            # plt.savefig('sample_prop_intensity_L0{:.0f}m_r0{:.0f}cm_wvl{:.0f}nm_z{:.0f}km.pdf'.format(L0,r0*100,wvl/1e-9,z/1e3),bbox_inches='tight')
+            plt.show()
         
-        PSDUatm = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(atm_pad_Uout)):
-            PSDUatm[i] = mps.get_PSD(atm_pad_Uout[i],delta)
-        PSDUatm[:] += PSDUatm[:,::-1]
-        PSDUatm /= 2.
-        
-        f=(np.arange(N//2-1) + 1)/N/delta
-        A = np.mean(PSDUatm[:,N//2+1:],axis=0)
-        Ae = np.std(PSDUatm[:,N//2+1:],axis=0)/np.sqrt(N)
-        B = np.mean(PSDUprop[:,N//2+1:],axis=0)
-        Be = np.std(PSDUprop[:,N//2+1:],axis=0)/np.sqrt(N)
-        
-        plt.plot(f,A,color='r',label='shortcut')
-        plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(f,B,color='b',label='proper')
-        plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='b')
-        plt.legend()
-        plt.ylim(B.min()*0.9,B.max()*1.1)
-        # plt.title('psd U' + '\n' + TAG)
-        plt.xlabel('f (1/m)')
-        plt.ylabel('$PSD_U$ (I$_{norm}$ m)')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.savefig('1DPSD_PROP_U{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
-        
-        
-        
-        PSDphaseatm = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(phase_atm_pad)):
-            PSDphaseatm[i] = mps.get_PSD(phase_atm_pad[i],delta)
-        PSDphaseatm[:] += PSDphaseatm[:,::-1]
-        PSDphaseatm /= 2.
-        
-        f=(np.arange(N//2-1) + 1)/N/delta
-        A = np.mean(PSDphaseatm[:,N//2+1:],axis=0)
-        Ae = np.std(PSDphaseatm[:,N//2+1:],axis=0)/np.sqrt(N)
-        B = np.mean(PSDphaseprop[:,N//2+1:],axis=0)
-        Be = np.std(PSDphaseprop[:,N//2+1:],axis=0)/np.sqrt(N)
-        
-        plt.plot(f,A,color='r',label='shortcut')
-        plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(f,B,color='b',label='proper')
-        plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='b')
-        plt.legend()
-        plt.ylim(B.min()*0.9,B.max()*1.1)
-        # plt.title('psd phase' + '\n' + TAG)
-        plt.xlabel('f (1/m)')
-        plt.ylabel('$PSD_\phi$ (rad$^2$ m)')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.savefig('1DPSD_PROP_phase{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+            # PSDUatm = np.zeros((N,N),dtype=float)
+            # for i in np.arange(len(atm_pad_Uout)):
+            #     PSDUatm[i] = mps.get_PSD(atm_pad_Uout[i],delta)
+            # PSDUatm[:] += PSDUatm[:,::-1]
+            # PSDUatm /= 2.
+            
+            # f=(np.arange(N//2-1) + 1)/N/delta
+            # A = np.mean(PSDUatm[:,N//2+1:],axis=0)
+            # Ae = np.std(PSDUatm[:,N//2+1:],axis=0)/np.sqrt(N)
+            # B = np.mean(PSDUprop[:,N//2+1:],axis=0)
+            # Be = np.std(PSDUprop[:,N//2+1:],axis=0)/np.sqrt(N)
+            
+            
+            # plt.plot(f,B,color='r',label='Full')
+            # plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='r')
+            # plt.plot(f,A,color='b',label='Reduced')
+            # plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='b')
+            # plt.legend()
+            # plt.ylim(B.min()*0.9,B.max()*1.1)
+            # # plt.title('psd U' + '\n' + TAG)
+            # plt.xlabel('Spatial frequency (1/m)')
+            # plt.ylabel('$PSD_U$ (I$_{norm}$ m)')
+            # plt.xscale('log')
+            # plt.yscale('log')
+            # plt.savefig('1DPSD_PROP_U{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            # plt.show()
+            
         
         
+            PSDphaseatm = np.zeros((N,N),dtype=float)
+            for i in np.arange(len(phase_atm_pad)):
+                PSDphaseatm[i] = mps.get_PSD(phase_atm_pad[i],delta)
+            PSDphaseatm[:] += PSDphaseatm[:,::-1]
+            PSDphaseatm /= 2.
         
-        PSDintensityatm = np.zeros((N,N),dtype=float)
-        for i in np.arange(len(intensity_atm_pad)):
-            PSDintensityatm[i] = mps.get_PSD(intensity_atm_pad[i],delta)
-        PSDintensityatm[:] += PSDintensityatm[:,::-1]
-        PSDintensityatm /= 2.
+            f=(np.arange(N//2-1) + 1)/N/delta
+            A = np.mean(PSDphaseatm[:,N//2+1:],axis=0)
+            Ae = np.std(PSDphaseatm[:,N//2+1:],axis=0)/np.sqrt(N)
+            B = np.mean(PSDphaseprop[:,N//2+1:],axis=0)
+            Be = np.std(PSDphaseprop[:,N//2+1:],axis=0)/np.sqrt(N)
         
-        f = (np.arange(N//2-1) + 1)/N/delta
-        A = np.mean(PSDintensityatm[:,N//2+1:],axis=0)
-        Ae = np.std(PSDintensityatm[:,N//2+1:],axis=0)/np.sqrt(N)
-        B = np.mean(PSDintensityprop[:,N//2+1:],axis=0)
-        Be = np.std(PSDintensityprop[:,N//2+1:],axis=0)/np.sqrt(N)
         
-        plt.plot(f,A,color='r',label='shortcut')
-        plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(f,B,color='b',label='proper')
-        plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='b')
-        # plt.vlines([1/np.sqrt(wvl*z)],B.min(),B.max(),label='1/$\sqrt{\lambda z}$',color='k')
-        plt.legend()
-        plt.ylim(B.min()*0.9,B.max()*1.1)
-        # plt.title('psd intensity' + '\n' + TAG)
-        plt.xlabel('f (1/m)')
-        plt.ylabel('$PSD_I$ (I$_{norm}$$^2$ m)')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.savefig('1DPSD_PROP_I{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+            
+            plt.plot(f,B,color='r',label='Full')
+            plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='r')
+            plt.plot(f,A,color='b',label='Reduced')
+            plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='b')
+            plt.legend()
+            plt.ylim(B.min()*0.9,B.max()*1.1)
+            # plt.title('psd phase' + '\n' + TAG)
+            plt.xlabel('Spatial frequency (1/m)')
+            plt.ylabel('Phase power spectrum density (rad$^2$ m)')
+            plt.xscale('log')
+            plt.yscale('log')
+            plt.savefig('1DPSD_PROP_phase{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            plt.show()
         
         
         
-        SFphaseatm = np.zeros((N,N), dtype=float)
-        # for i in np.arange(N):
-        #     SFphaseatm[i] = mps.get_structure_function(np.roll(phase_atm_pad,(i),axis=(0)))
-        # SFphaseatm = (phase_atm_pad[:,0] - phase_atm_pad[:,:])**2
-        for i in np.arange(N):
-            SFphaseatm[i] = np.angle((atm_pad_Uout[i,i] / np.roll(atm_pad_Uout[i],(-i),axis=(0))))**2
+            PSDintensityatm = np.zeros((N,N),dtype=float)
+            for i in np.arange(len(intensity_atm_pad)):
+                PSDintensityatm[i] = mps.get_PSD(intensity_atm_pad[i],delta)
+            PSDintensityatm[:] += PSDintensityatm[:,::-1]
+            PSDintensityatm /= 2.
+            
+            f = (np.arange(N//2-1) + 1)/N/delta
+            A = np.mean(PSDintensityatm[:,N//2+1:],axis=0)
+            Ae = np.std(PSDintensityatm[:,N//2+1:],axis=0)/np.sqrt(N)
+            B = np.mean(PSDintensityprop[:,N//2+1:],axis=0)
+            Be = np.std(PSDintensityprop[:,N//2+1:],axis=0)/np.sqrt(N)
         
         
-        x = np.arange(N//2)*delta
-        A = np.mean(SFphaseatm[:,:N//2],axis=0)
-        Ae = np.std(SFphaseatm[:,:N//2],axis=0)/np.sqrt(N)
-        B = np.mean(SFphaseprop[:,:N//2],axis=0)
-        Be = np.std(SFphaseprop[:,:N//2],axis=0)/np.sqrt(N)
-        
-        plt.plot(x,A,color='r',label='shortcut')
-        plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(x,B,color='b',label='proper')
-        plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='b')
-        plt.legend()
-        plt.ylim(B[1:].min()*0.9,B.max()*1.1)
-        # plt.title('structure function $\phi$' + '\n' + TAG)
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('separation (m)')
-        plt.ylabel('$D_\phi$ (rad$^2$)')
-        plt.savefig('SF_PROP_phase{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+            plt.plot(f,B,color='r',label='Full')
+            plt.fill_between(f,B-Be,B+Be,alpha=0.2,color='r')
+            plt.plot(f,A,color='b',label='Reduced')
+            plt.fill_between(f,A-Ae,A+Ae,alpha=0.2,color='b')
+            
+            # plt.vlines([1/np.sqrt(wvl*z)],B.min(),B.max(),label='1/$\sqrt{\lambda z}$',color='k')
+            plt.legend()
+            plt.ylim(B.min()*0.9,B.max()*1.1)
+            # plt.title('psd intensity' + '\n' + TAG)
+            plt.xlabel('Spatial frequency (1/m)')
+            plt.ylabel('Intensity power spectrum density')
+            plt.xscale('log')
+            plt.yscale('log')
+            plt.savefig('1DPSD_PROP_I{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            plt.show()
+            
         
         
+            SFphaseatm = np.zeros((N,N), dtype=float)
+            # for i in np.arange(N):
+            #     SFphaseatm[i] = mps.get_structure_function(np.roll(phase_atm_pad,(i),axis=(0)))
+            # SFphaseatm = (phase_atm_pad[:,0] - phase_atm_pad[:,:])**2
+            for i in np.arange(N):
+                SFphaseatm[i] = np.angle((atm_pad_Uout[i,i] / np.roll(atm_pad_Uout[i],(-i),axis=(0))))**2
         
-        SFintensityatm = np.zeros((N,N), dtype=float)
-        # for i in np.arange(N):
-        #     SFintensityatm[i] = mps.get_structure_function(np.roll(intensity_atm_pad,(i),axis=(0)))
-        # SFintensityatm = (intensity_atm_pad[:,0] - intensity_atm_pad[:,:])**2
-        for i in np.arange(N):
-            SFintensityatm[i] = (intensity_atm_pad[i,i] - np.roll(intensity_atm_pad[i],(-i),axis=(0)))**2
-        
-        x = np.arange(N//2)*delta
-        A = np.mean(SFintensityatm[:,:N//2],axis=0)
-        Ae = np.std(SFintensityatm[:,:N//2],axis=0)/np.sqrt(N)
-        B = np.mean(SFintensityprop[:,:N//2],axis=0)
-        Be = np.std(SFintensityprop[:,:N//2],axis=0)/np.sqrt(N)
-        
-        plt.plot(x,A,color='r',label='shortcut')
-        plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(x,B,color='b',label='proper')
-        plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='b')
-        # plt.vlines([np.sqrt(wvl*z)],
-        #             B.min(),B.max(),label='$\sqrt{\lambda z}$',color='k')
-        plt.legend()
-        # plt.title('structure function I' + '\n' + TAG)
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('separation (m)')
-        plt.ylabel('$D_I$ (I$_{norm}$$^2$)')
-        plt.savefig('SF_PROP_I{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+            
+            x = np.arange(N//2)*delta
+            A = np.mean(SFphaseatm[:,:N//2],axis=0)
+            Ae = np.std(SFphaseatm[:,:N//2],axis=0)/np.sqrt(N)
+            B = np.mean(SFphaseprop[:,:N//2],axis=0)
+            Be = np.std(SFphaseprop[:,:N//2],axis=0)/np.sqrt(N)
         
         
-        SFUatm = np.zeros((N,N), dtype=float)
-        for i in np.arange(N):
-            SFUatm[i] = np.abs(atm_pad_Uout[i,i] - np.roll(atm_pad_Uout[i],(-i),axis=(0)))**2
-        SFUprop = np.zeros((N,N), dtype=float)
-        for i in np.arange(N):
-            SFUprop[i] = np.abs(prop_pad_Uout[i,i] - np.roll(prop_pad_Uout[i],(-i),axis=(0)))**2
-        
-        x = np.arange(N//2)*delta
-        A = np.mean(SFUatm[:,:N//2],axis=0)
-        Ae = np.std(SFUatm[:,:N//2],axis=0)/np.sqrt(N)
-        B = np.mean(SFUprop[:,:N//2],axis=0)
-        Be = np.std(SFUprop[:,:N//2],axis=0)/np.sqrt(N)
-        
-        plt.plot(x,A,color='r',label='shortcut')
-        plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='r')
-        plt.plot(x,B,color='b',label='proper')
-        plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='b')
-        # plt.vlines([np.sqrt(wvl*z)],
-        #             B.min(),B.max(),label='$\sqrt{\lambda z}$',color='k')
-        plt.legend()
-        # plt.title('structure function U' + '\n' + TAG)
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('separation (m)')
-        plt.ylabel('$D_U$ (I$_{norm}$)')
-        plt.savefig('SF_PROP_U{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+            
+            plt.plot(x,B,color='r',label='Full')
+            plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='r')
+            plt.plot(x,A,color='b',label='Reduced')
+            plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='b')
+            plt.legend()
+            plt.ylim(B[1:].min()*0.9,B.max()*1.1)
+            # plt.title('structure function $\phi$' + '\n' + TAG)
+            plt.xscale('log')
+            plt.yscale('log')
+            plt.xlabel('Separation (m)')
+            plt.ylabel('Phase structure function (rad$^2$)')
+            plt.savefig('SF_PROP_phase{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            plt.show()
         
         
-        dif = np.angle(atm_pad_Uout/prop_pad_Uout)*intensity_prop_pad**0.5
-        plt.imshow(dif)
-        plt.colorbar()
-        weighted_rms = np.sum(dif**2)/np.sum(intensity_prop_pad)*500/2/np.pi
-        plt.title('OPD intensity-weighted RMS difference {:.0f} (nm)'.format(weighted_rms))
-        plt.savefig('OPD_RMS_DIF{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
-        plt.show()
+        
+            SFintensityatm = np.zeros((N,N), dtype=float)
+            # for i in np.arange(N):
+            #     SFintensityatm[i] = mps.get_structure_function(np.roll(intensity_atm_pad,(i),axis=(0)))
+            # SFintensityatm = (intensity_atm_pad[:,0] - intensity_atm_pad[:,:])**2
+            for i in np.arange(N):
+                SFintensityatm[i] = (intensity_atm_pad[i,i] - np.roll(intensity_atm_pad[i],(-i),axis=(0)))**2
+            
+            x = np.arange(N//2)*delta
+            A = np.mean(SFintensityatm[:,:N//2],axis=0)
+            Ae = np.std(SFintensityatm[:,:N//2],axis=0)/np.sqrt(N)
+            B = np.mean(SFintensityprop[:,:N//2],axis=0)
+            Be = np.std(SFintensityprop[:,:N//2],axis=0)/np.sqrt(N)
+        
+        
+            plt.plot(x,B,color='r',label='Full')
+            plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='r')
+            plt.plot(x,A,color='b',label='Reduced')
+            plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='b')
+            # plt.vlines([np.sqrt(wvl*z)],
+            #             B.min(),B.max(),label='$\sqrt{\lambda z}$',color='k')
+            plt.legend()
+            # plt.title('structure function I' + '\n' + TAG)
+            plt.xscale('log')
+            plt.yscale('log')
+            plt.xlabel('Separation (m)')
+            plt.ylabel('Intensity structure function')
+            plt.savefig('SF_PROP_I{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            plt.show()
+            
+        
+            SFUatm = np.zeros((N,N), dtype=float)
+            for i in np.arange(N):
+                SFUatm[i] = np.abs(atm_pad_Uout[i,i] - np.roll(atm_pad_Uout[i],(-i),axis=(0)))**2
+            SFUprop = np.zeros((N,N), dtype=float)
+            for i in np.arange(N):
+                SFUprop[i] = np.abs(prop_pad_Uout[i,i] - np.roll(prop_pad_Uout[i],(-i),axis=(0)))**2
+            
+            x = np.arange(N//2)*delta
+            A = np.mean(SFUatm[:,:N//2],axis=0)
+            Ae = np.std(SFUatm[:,:N//2],axis=0)/np.sqrt(N)
+            B = np.mean(SFUprop[:,:N//2],axis=0)
+            Be = np.std(SFUprop[:,:N//2],axis=0)/np.sqrt(N)
+        
+        dif = np.angle(atm_pad_Uout/prop_pad_Uout)#*intensity_prop_pad**0.5
+        weighted_rms = np.sum(dif**2*intensity_prop_pad**2)/np.sum(intensity_prop_pad**2)*500/2/np.pi
+        #rms_error_i = np.sqrt(np.mean(weighted_rms)**2 * (np.std(dif**2)/np.mean(dif**2))**2 + (np.std(intensity_prop_pad)/np.mean(intensity_prop_pad))**2)
+        rms_error_i = (1/np.sum(intensity_prop_pad**2))**0.5#(np.sum(intensity_prop_pad**2)/np.sum(intensity_prop_pad)**2)**0.5*weighted_rms
+        
+        if z == 10000:
+        
+            # plt.plot(x,A,color='r',label='shortcut')
+            # plt.fill_between(x,A-Ae,A+Ae,alpha=0.2,color='r')
+            # plt.plot(x,B,color='b',label='proper')
+            # plt.fill_between(x,B-Be,B+Be,alpha=0.2,color='b')
+            # # plt.vlines([np.sqrt(wvl*z)],
+            # #             B.min(),B.max(),label='$\sqrt{\lambda z}$',color='k')
+            # plt.legend()
+            # # plt.title('structure function U' + '\n' + TAG)
+            # plt.xscale('log')
+            # plt.yscale('log')
+            # plt.xlabel('separation (m)')
+            # plt.ylabel('$D_U$ (I$_{norm}$)')
+            # plt.savefig('SF_PROP_U{:.0f}.png'.format(z/1000),bbox_inches='tight')
+            # plt.show()
+            
+            plt.figure(figsize=(5,4))
+            
+            plt.imshow(dif*intensity_prop_pad)
+            plt.colorbar()
+            
+            plt.xlabel('Position (m)')
+            # plt.title('OPD intensity-weighted RMS difference {:.0f} (nm)'.format(weighted_rms))
+            # plt.savefig('OPD_RMS_DIF{:.0f}.pdf'.format(z/1000),bbox_inches='tight')
+            plt.savefig('OPD_IWRMS.png'.format(z/1000),bbox_inches='tight')
+            plt.show()
         
         rms[i_z,i_r0] = weighted_rms
+        rms_error[i_z,i_r0] = rms_error_i
         
         ###############################################################################
         ###############################################################################
@@ -1493,14 +1553,18 @@ for i_z in range(3):
         # plt.ylabel('$\sigma^2_I$ (I$_{norm}$$^2$)')
         # plt.show()
         
-r0_list = [0.02,0.05,0.1]
-for i in range(3):
-    plt.plot([1e2,1e3,1e4],rms[:,i],label='r0{:.0f}cm'.format(r0_list[i]*100))
+
+for i in range(len(r0_list)):
+    plt.errorbar(np.logspace(2,4,datapoint),
+                 rms[:,i],
+                 yerr=rms_error[:,i],
+                 capsize=5,marker='o',
+                 label='$r_0$={:.0f}cm'.format(r0_list[i]*100))
 plt.legend()
 plt.xscale('log')
 plt.yscale('log')
-plt.xlabel('propagation distance (m)')
-plt.ylabel('intensity-weighted OPD RMS (nm)')
+plt.xlabel('Propagation distance (m)')
+plt.ylabel('Intensity-weighted RMS OPD (nm)')
 plt.savefig('IW-OPD-RMS-dif-cheat.pdf',bbox_inches='tight')
 plt.show()
 

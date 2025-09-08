@@ -132,28 +132,62 @@ class SHWFS_from_image_adaptive_ROI():
         self.IM = IM
 
         MAX_LOC = np.where(self.IM == np.max(self.IM))
-        if (len(MAX_LOC[0]) !=1) or (len(MAX_LOC[1]) != 1):
-            print('doubly max')
-        MAX_LOC_X = MAX_LOC[0][0]
-        MAX_LOC_Y = MAX_LOC[1][0]
-
-        low_x = (MAX_LOC_X - self.N//2)
-        high_x = (MAX_LOC_X + self.N//2)
-        low_y = (MAX_LOC_Y - self.N//2)
-        high_y = (MAX_LOC_Y + self.N//2)
-
-        if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
-            print('out of bound')
-
-        self.Im = self.IM[low_x:high_x,low_y:high_y]
-        Im_sum = np.sum(self.Im)
-        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
-        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
         
-        # plt.imshow(self.Im)
-        # plt.colorbar()
-        # plt.show()
-        # plt.clf()
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                
+                if self.N % 2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
+
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
 
         return np.asarray([SHWFS0, SHWFS1])*np.pi
     
@@ -162,42 +196,442 @@ class SHWFS_from_image_adaptive_ROI():
         self.IM = IM
 
         MAX_LOC = np.where(self.IM == np.max(self.IM))
-        if (len(MAX_LOC[0]) !=1) or (len(MAX_LOC[1]) != 1):
-            print('doubly max')
-        MAX_LOC_X = MAX_LOC[0][0]
-        MAX_LOC_Y = MAX_LOC[1][0]
-
-        low_x = (MAX_LOC_X - self.N//2)
-        high_x = (MAX_LOC_X + self.N//2)
-        low_y = (MAX_LOC_Y - self.N//2)
-        high_y = (MAX_LOC_Y + self.N//2)
-
-        if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
-            print('out of bound')
-
-        self.Im = self.IM[low_x:high_x,low_y:high_y]
-
-
-        self.Im = self.Im * Nphot/self.Im.sum()
-        self.Im = (np.random.poisson(self.Im)
-                   + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
-
-        maxval = self.Im.max()
-        self.Im = self.Im - MaxNormThreshold*maxval
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
         
-        self.Im[self.Im < 0] = 0.
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                if self.N %2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                self.Im = self.Im * Nphot/self.Im.sum()
+                self.Im = (np.random.poisson(self.Im)
+                           + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
 
-        Im_sum = np.sum(self.Im)
-        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
-        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+                maxval = self.Im.max()
+                self.Im = self.Im - MaxNormThreshold*maxval
+                
+                self.Im[self.Im < 0] = 0.
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
 
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            self.Im = self.Im * Nphot/self.Im.sum()
+            self.Im = (np.random.poisson(self.Im)
+                       + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
+
+            maxval = self.Im.max()
+            self.Im = self.Im - MaxNormThreshold*maxval
+            
+            self.Im[self.Im < 0] = 0.
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+    
+    def measure_no_noise_with_threshold(self, IM, MaxNormThreshold):
+        """Measure tilt. U must not be zero-padded. In number of photons."""
+        self.IM = IM
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
+        
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                if self.N %2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                maxval = self.Im.max()
+                self.Im = self.Im - MaxNormThreshold*maxval
+                
+                self.Im[self.Im < 0] = 0.
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
+
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            maxval = self.Im.max()
+            self.Im = self.Im - MaxNormThreshold*maxval
+            
+            self.Im[self.Im < 0] = 0.
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+
+
+class SHWFS_from_U_adaptive_ROI():
+    """
+    Run one SHWFS measurement from image of SHWFS detector plane.
+    Receiving image of NxN but readout only nxn around the maximum point.
+    """
+    def __init__(self, N, NN):
+        """N is for the no zero-padded data."""
+        self.N = N # region of interest
+        self.NN = NN # whole input image
+        self.Im = np.zeros((self.N, self.N), dtype=float)
+        self.IM = np.zeros((self.NN, self.NN), dtype=float)
+
+        (self.ywfs, self.xwfs) = np.meshgrid(np.arange(self.N) + 0.5 - self.N/2,
+                                   np.arange(self.N) + 0.5 - self.N/2)
+        
+        self.a = int(self.NN/2)
+        self.b = int(3*self.NN/2)
+        self.U = np.zeros((self.NN, self.NN), dtype=complex)
+
+        self.F0 = pyfftw.empty_aligned((2*self.NN, 2*self.NN), dtype=complex)
+        self.F1 = pyfftw.empty_aligned((2*self.NN, 2*self.NN), dtype=complex)
+        self.FF01 = pyfftw.FFTW(self.F0, self.F1, axes=(-1,-2), direction='FFTW_FORWARD')
+
+        (y1, x1) = np.meshgrid(np.arange(-self.NN/2, self.NN/2),
+                               np.arange(-self.NN/2, self.NN/2))
+        self.Q = np.exp(-1j*(x1 + y1)*np.pi/(2*self.NN))
+        
+        self.pupil = zernikeArray(1, NN)[0]
+
+        del x1, y1
+    def makeIM(self,U):
+        self.IM = np.abs(np.fft.fftshift(
+            self.FF01(np.pad(U * self.Q * self.pupil,
+                             (self.a, self.a), 'constant', constant_values=0.))
+            )[self.a : self.b, self.a : self.b])**2
+        self.IM = self.IM/self.IM.sum()
+    def measure_no_noise_no_threshold(self, U):
+        self.makeIM(U)
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
+        
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                if self.N %2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
+
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+    
+    def measure_with_noise_with_threshold(self, U, Nphot, sigma_readout, MaxNormThreshold):
+        """Measure tilt. U must not be zero-padded. In number of photons."""
+   
+        self.makeIM(U)
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
+        
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                if self.N %2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                self.Im = self.Im * Nphot/self.Im.sum()
+                self.Im = (np.random.poisson(self.Im)
+                           + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
+
+                maxval = self.Im.max()
+                self.Im = self.Im - MaxNormThreshold*maxval
+                
+                self.Im[self.Im < 0] = 0.
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
+
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            self.Im = self.Im * Nphot/self.Im.sum()
+            self.Im = (np.random.poisson(self.Im)
+                       + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
+
+            maxval = self.Im.max()
+            self.Im = self.Im - MaxNormThreshold*maxval
+            
+            self.Im[self.Im < 0] = 0.
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+    
+    def measure_no_noise_with_threshold(self, U, MaxNormThreshold):
+        """Measure tilt. U must not be zero-padded. In number of photons."""
+   
+        self.makeIM(U)
+
+        MAX_LOC = np.where(self.IM == np.max(self.IM))
+        if (len(MAX_LOC[0]) != 1) or (len(MAX_LOC[1]) != 1):
+            # print('doubly max')
+            positions0 = []
+            positions1 = []
+            for maxes in range(len(MAX_LOC[0])):
+                MAX_LOC_X = MAX_LOC[0][maxes]
+                MAX_LOC_Y = MAX_LOC[1][maxes]
+        
+                low_x = (MAX_LOC_X - self.N//2)
+                high_x = (MAX_LOC_X + self.N//2)
+                low_y = (MAX_LOC_Y - self.N//2)
+                high_y = (MAX_LOC_Y + self.N//2)
+                if self.N %2 == 1:
+                    high_x += 1
+                    high_y += 1
+        
+                if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                    print('out of bound')
+        
+                self.Im = self.IM[low_x:high_x,low_y:high_y]
+                maxval = self.Im.max()
+                self.Im = self.Im - MaxNormThreshold*maxval
+                
+                self.Im[self.Im < 0] = 0.
+                Im_sum = np.sum(self.Im)
+                positions0.append(np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2)
+                positions1.append(np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2)
+
+            SHWFS0 = np.mean(positions0)
+            SHWFS1 = np.mean(positions1)
+                
+        else:
+            MAX_LOC_X = MAX_LOC[0][0]
+            MAX_LOC_Y = MAX_LOC[1][0]
+    
+            low_x = (MAX_LOC_X - self.N//2)
+            high_x = (MAX_LOC_X + self.N//2)
+            low_y = (MAX_LOC_Y - self.N//2)
+            high_y = (MAX_LOC_Y + self.N//2)
+            if self.N %2 == 1:
+                high_x += 1
+                high_y += 1
+    
+            if ((low_x < 0) or (low_y < 0) or (high_x > (self.NN - 1)) or (high_y > (self.NN - 1))):
+                print('out of bound')
+    
+            self.Im = self.IM[low_x:high_x,low_y:high_y]
+            maxval = self.Im.max()
+            self.Im = self.Im - MaxNormThreshold*maxval
+            
+            self.Im[self.Im < 0] = 0.
+            Im_sum = np.sum(self.Im)
+            SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum + MAX_LOC_X - self.NN//2
+            SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum + MAX_LOC_Y - self.NN//2
+            
+            # plt.imshow(self.Im)
+            # plt.colorbar()
+            # plt.show()
+            # plt.clf()
+        
+        if self.N %2 == 1:
+            SHWFS0 += 0.5
+            SHWFS1 += 0.5
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+
+class FastestFTSHWFS():
+    """
+    SHWFS with 1-step propagation.
+    
+    Works best for 1:1 input:output pixel ratio.
+    Output angular scale is 0.5 wvl/d.
+    """
+
+    def __init__(self, N):
+        """N is for the no zero-padded data."""
+        self.N = N
+        self.a = int(self.N/2)
+        self.b = int(3*self.N/2)
+        self.U = np.zeros((self.N, self.N), dtype=complex)
+
+        self.F0 = pyfftw.empty_aligned((2*self.N, 2*self.N), dtype=complex)
+        self.F1 = pyfftw.empty_aligned((2*self.N, 2*self.N), dtype=complex)
+        self.FF01 = pyfftw.FFTW(self.F0, self.F1, axes=(-1,-2), direction='FFTW_FORWARD')
+
+        (self.ywfs, self.xwfs) = np.meshgrid(np.arange(-self.N/2, self.N/2),
+                               np.arange(-self.N/2, self.N/2))
+
+        self.Im = np.zeros((self.N, self.N), dtype=float)
+
+        self.pupil = zernikeArray(1, N)[0]
+        
+    def measure_no_noise_no_threshold(self, U):
+        """Measure tilt. U must not be zero-padded."""
+        self.Im = np.abs(np.fft.fftshift(
+            self.FF01(np.pad(U * self.pupil,
+                             (self.a, self.a), 'constant', constant_values=0.))
+            )[self.a : self.b, self.a : self.b])**2
+        self.Im = self.Im/self.Im.sum()
+
+        SHWFS0 = np.sum(self.Im * self.xwfs)
+        SHWFS1 = np.sum(self.Im * self.ywfs)
+        
         # plt.imshow(self.Im)
         # plt.colorbar()
         # plt.show()
         # plt.clf()
 
         return np.asarray([SHWFS0, SHWFS1])*np.pi
-
 
 class OneStepSHWFS():
     """
@@ -281,6 +715,33 @@ class OneStepSHWFS():
         self.Im = self.Im * Nphot/self.Im.sum()
         self.Im = (np.random.poisson(self.Im)
                    + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
+        
+        maxval = self.Im.max()
+        self.Im = self.Im - MaxNormThreshold*maxval
+        
+        self.Im[self.Im < 0] = 0.
+
+        Im_sum = np.sum(self.Im)
+        SHWFS0 = np.sum(self.Im * self.xwfs)/Im_sum
+        SHWFS1 = np.sum(self.Im * self.ywfs)/Im_sum
+
+        # plt.imshow(self.Im)
+        # plt.colorbar()
+        # plt.show()
+        # plt.clf()
+
+        return np.asarray([SHWFS0, SHWFS1])*np.pi
+    
+    def measure_no_noise_with_threshold(self, U, MaxNormThreshold):
+        """Measure tilt. U must not be zero-padded. In number of photons."""
+        self.Im = np.abs(np.fft.fftshift(
+            self.FF01(np.pad(U * self.pupil * self.Q,
+                             (self.a, self.a), 'constant', constant_values=0.))
+            )[self.a : self.b, self.a : self.b])**2
+
+        # self.Im = self.Im * Nphot/self.Im.sum()
+        # self.Im = (np.random.poisson(self.Im)
+        #            + np.random.normal(0, sigma_readout, size=(self.N, self.N)))
         
         maxval = self.Im.max()
         self.Im = self.Im - MaxNormThreshold*maxval

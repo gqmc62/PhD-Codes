@@ -17,6 +17,34 @@ from matplotlib import colors
 import my_phasescreen as mps
 import os
 
+
+import my_propagation as mprop
+import my_phasescreen as mps
+
+os.chdir(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter3Plots')
+
+
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 # from my_WFS import rebin
 
 for i_case in range(4):
@@ -69,7 +97,7 @@ for i_case in range(4):
         hdulist.close()
         screens_list = real + 1j*imag
         mprop.testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
-        mprop.testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
+        # mprop.testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
     else:
         print('suckers')
         z_list_prop = np.append(0, real_z_list)
@@ -78,7 +106,7 @@ for i_case in range(4):
         screens_list = mprop.screensForTestProp1Layer(wvl,z_list_prop,r0HA,N,delta)
         name = 'propagation_sample_1HA_imag_d{:.0f}cm_r0{:.0f}cm_n{:d}px'.format(d*100,r0HA*100,lenslet_pixel)
         mprop.testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
-        mprop.testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
+        # mprop.testPropBlobSize(screens_list,wvl,real_z_list,r0HA,N,delta,tag=name)
         name = 'propagation_sample_1HA_real_d{:.0f}cm_r0{:.0f}cm_n{:d}px'.format(d*100,r0HA*100,lenslet_pixel)
         hdu = fits.PrimaryHDU(screens_list.real)
         hdul = fits.HDUList([hdu])
@@ -300,6 +328,7 @@ for i_case in range(4):
     # # # distributedr0 = (turbulenceStrengths*r0**(-5./3.))**(-3./5.)
     
     measure_scintillation_blob_size = np.zeros((screens_list.shape[0] - 1),dtype=float)
+    error = np.copy(measure_scintillation_blob_size)
     
     from scipy.interpolate import make_smoothing_spline
     
@@ -312,7 +341,12 @@ for i_case in range(4):
         smoothen = 10**spl(np.log10(new_x))
         slope_a = smoothen[1:] - smoothen[:-1]
         measure_scintillation_blob_size[i] = np.where(slope_a<=0)[0][0]
-        
+        min0 = 0
+        max0 = np.where(slope_a<=0)[0][0]
+        min1 = np.where(slope_a[max0:]>=0)[0][0] + max0
+        error[i] = np.min([(min1 - max0) / 2, (max0-min0) / 2])
+        # plt.plot(smoothen);plt.vlines([min0,max0,min1],0,1)
+        # plt.show()
         # plt.plot(new_x,a[1:],color='r')#,yerr=b)
         # plt.vlines([np.sqrt(wvl*real_z_list[i])],a.min(),a.max(),label='sqrt($\lambda$z)',color='b')
         # plt.plot(new_x,smoothen,label='smooth')
@@ -329,12 +363,16 @@ for i_case in range(4):
     
     
     
-    plt.plot(z_list[1:],measure_scintillation_blob_size*delta,ls='',marker='o',label='measured')
-    plt.plot(z_list[1:],np.sqrt(wvl*z_list[1:]),label='sqrt($\lambda$z)')
-    plt.xlabel('z (m)')
-    plt.ylabel('separation (m)')
+    plt.errorbar(z_list[1:],
+                 (measure_scintillation_blob_size - 0.5)*delta,
+                 yerr=error*delta,
+                 ls='',marker='o',label='Measured',capsize=5,color='r')
+    plt.plot(z_list[1:],np.sqrt(wvl*z_list[1:]),label='$\sqrt{\lambda z}$',color='b')
+    plt.ylabel('Radius of the scintillation pattern (m)')
+    plt.xlabel('Propagation distance (m)')
     plt.xscale('log')
     plt.yscale('log')
+    plt.legend()
     plt.savefig('scintillation_blob_structure_function'+name+'.pdf',bbox_inches='tight')
     plt.show()
     

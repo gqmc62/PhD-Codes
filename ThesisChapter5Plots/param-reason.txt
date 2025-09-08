@@ -1,0 +1,103 @@
+Atmosphere:
+  L0:
+  - 4				===> simulation capability
+  infinite: true		===> better than FT method
+  r0: 0.10			===> arbitrary?
+  scrnHeights:
+  - 0				===> test
+  scrnNo: 1			===> test
+  scrnStrengths:
+  - 1				===> yes
+  windDirs:
+  - 0				===> yes
+  windSpeeds:
+  - 0				===> static turb
+  removedTipTiltPiston: True
+DM:
+  0:
+    altitude: 0			===> yes
+    closed: true		===> yes
+    gain: 0.8			===> arbitrary?
+    iMatValue: 0.0041253	===> 1nm tip tilt over 0.4 m?
+    type: TT			===> yes
+  1:
+    altitude: 0			===> yes
+    closed: true		===> yes
+    gain: 0.8			===> AHHH????
+    iMatValue: 1		===> 1nm push
+    type: FastPiezo
+  2:
+    L0: 4			===> sim capability
+    altitude: 5000		===> test
+    calibrate: true		===> yes
+    closed: true		===> yes
+    iMatValue: 1		===> no need really
+    nollMode: 45		===> #NOT#for AAHHHH I FORGOT should be 171,105,66 for 10,8,6#
+				===> I use the filtered DM so no noll modes, lol
+    r0: 0.05			===> test
+    subtype: Atmosphere_perfect_DM_no_tip_tilt	===> filter dm
+    type: Aberration		===> test
+Reconstructor:
+  svdConditioning: 0.05		===> optimised for 8xsub no distort
+  type: MVM
+  analyseAberationCalib: true
+Science:
+  0:
+    FOV: 9			===> so it would have the diffraction limit spot
+				===> ALSO must pick so that it will be suitable for all of the simulation cases for 						fairness performance measurements.
+    position:
+    - 0				===> on-axis
+    - 0				===> on-axis
+    propagationMode: Physical	===> MUST
+    pxls: 180			===> ALSO must pick so that it will be suitable for all of the simulation cases for 						fairness performance measurements.
+    wavelength: 500e-9		===> yes
+    fftOversamp: 2		===> not necessary? but I pick this or else it collapse the code
+    fftwThreads: 8		===> computational problem
+    fftwFlag: FFTW_MEASURE	===> 
+Telescope:
+  mask: circle			===> yes
+  obsDiam: 0.0			===> yes
+  telDiam: 0.3			===> yes ahh depends on what are you testing.
+WFS:
+  0:
+    GSHeight: 0			===> inf
+    GSMag: 3			===> no photon noise though so whatever
+    GSPosition:
+    - 0				===> on-axis
+    - 0				===> on-axis
+    fftOversamp: 1		===> not necessary? but well removing might collapse the code
+    nxSubaps: 6			===> test
+    propagationMode: Physical	===> MUST
+    pxlsPerSubap: 18		===> 4 x worst seeing
+    subapFOV: 17		===> min = dif limit of subap
+    subapThreshold: 0.9		===> well.....
+    type: ShackHartmann		===> yes
+    wavelength: 500e-9		===> yes
+    fftwThreads: 8		===> comput power
+    fftwFlag: FFTW_MEASURE	===> im not fine tuning
+    centThreshold: 0.0		===> im not fine tuning
+    globalCentThreshold: 0.0	===> im not fine tuning
+loopTime: 0.001			===> im doing no time flow, so lol
+nDM: 3
+nGS: 1
+nIters: 5			===> test 5x loop convergence
+nSci: 1
+pupilSize: 136			===> ??????????????????????????????????????????????????????????????????????
+saveCalib: true
+saveDmCommands: true
+saveInstPsf: false
+saveInstScieField: false
+saveLgsPsf: false
+saveSciPsf: true
+saveSciRes: true
+saveAtmSlopes: true
+saveSlopes: true
+saveStrehl: true
+saveWfe: true
+saveWfsIntensity: true
+saveRytov: true
+saveWfsFrames: false
+simName: bad_IM_B2
+simOversize : 0
+threads: 96			===> lol I used 8!!!! no wonder it's slow
+verbosity: 0

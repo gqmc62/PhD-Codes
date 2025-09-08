@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 
 from scipy import stats
 
-TEST_GAUSS = True
+TEST_GAUSS = False
 PLOT = True
 
 nbins = 20
@@ -20,7 +20,7 @@ def gauss(x, mean, std, area):
     y = area*np.exp(-((x - mean)/std)**2/2.)/(std*np.sqrt(2*np.pi))*(x[1] - x[0])
     return y
 
-with open('/mt/cfai/pkongkaew/IGPhaseScreen/Ultimate_input.pkl','rb') as file:
+with open(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots\Ultimate_input.pkl','rb') as file:
     input_data = pickle.load(file)
 keys = input_data.keys()
 for item_i in np.arange(len(keys)):
@@ -37,7 +37,7 @@ del input_data
 # #     data = input_data[key_name]
 # #     globals()[key_name] = data
 
-with open('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/Slopes/SHWFSNoiseScintillation0000.pkl', 'rb') as file:
+with open(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots\20250626\Slopes\sq-ap-no-ft-bias-SHWFSNoiseScintillation0000.pkl', 'rb') as file:
     input_data = pickle.load(file)
 file.close()
 keys = input_data.keys()
@@ -68,41 +68,48 @@ del input_data
 # SHWFSTilt = np.zeros((II,JJ,KK,LL,MM,NN,OO,
 #                       COUNT1,2,COUNT2),dtype=float)
 
-Noise = np.zeros((II,JJ,KK,LL,MM,NN,OO,
-                  COUNT1,2,COUNT2),dtype=float)
-
+# Noise = np.zeros((II,JJ,KK,LL,MM,NN,OO,
+#                   COUNT1,2,COUNT2),dtype=float)
+NoiseRMS = np.zeros((II,JJ,KK,LL,MM,NN,OO),dtype=float)
 for ii in np.arange(II):
     for jj in np.arange(JJ):
         for kk in np.arange(KK):
             for ll in np.arange(LL):
                 try:
-                    with open('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/Slopes/SHWFSNoiseScintillation{:d}{:d}{:d}{:d}.pkl'.format(ii,jj,kk,ll), 'rb') as file:
+                    with open(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots\20250626\Slopes\sq-ap-no-ft-bias-SHWFSNoiseScintillation{:d}{:d}{:d}{:d}.pkl'.format(ii,jj,kk,ll), 'rb') as file:
                         input_data = pickle.load(file)
                     # NoNoiseSHWFSTilt[ii,jj,kk,ll] = input_data['NoNoiseSHWFSTilt']
                     # SHWFSTilt[ii,jj,kk,ll] = input_data['SHWFSTilt']
-                    Noise[ii,jj,kk,ll] = input_data['Noise']
+                    # Noise[ii,jj,kk,ll] = input_data['Noise']
+                    NoiseRMS[ii,jj,kk,ll] = np.nanstd(input_data['Noise'],axis=(-3,-2,-1))
                     file.close()
                 except:
                     # NoNoiseSHWFSTilt[ii,jj,kk,ll,:] = np.nan
                     # SHWFSTilt[ii,jj,kk,ll,:] = np.nan
-                    Noise[ii,jj,kk,ll] = np.nan
+                    NoiseRMS[ii,jj,kk,ll] = np.nan
 del input_data
 
-# II,JJ,KK,LL,MM,NN,OO
-# r0,dor0,Rytov,H_HA,N_phot_list,RON_list,Threshold_list
+NoscinNoiseRMS = np.zeros((II,JJ,MM,NN,OO),dtype=float)
+for ii in np.arange(II):
+    for jj in np.arange(JJ):
+        for kk in np.arange(KK):
+            for ll in np.arange(LL):
+                try:
+                    with open(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots\20250626\Slopes\sq-ap-no-ft-bias-SHWFSNoiseNoScintillation{:d}{:d}.pkl'.format(ii,jj), 'rb') as file:
+                        input_data = pickle.load(file)
+                    # NoNoiseSHWFSTilt[ii,jj,kk,ll] = input_data['NoNoiseSHWFSTilt']
+                    # SHWFSTilt[ii,jj,kk,ll] = input_data['SHWFSTilt']
+                    # Noise[ii,jj,kk,ll] = input_data['Noise']
+                    NoscinNoiseRMS[ii,jj] = np.nanstd(input_data['Noise'],axis=(-3,-2,-1))
+                    file.close()
+                except:
+                    # NoNoiseSHWFSTilt[ii,jj,kk,ll,:] = np.nan
+                    # SHWFSTilt[ii,jj,kk,ll,:] = np.nan
+                    NoscinNoiseRMS[ii,jj] = np.nan
+del input_data
 
-
-# SHWFSTilt noisy wfs
-# NoNoiseSHWFSTilt no noise wfs
-
-# NoNoise = NoNoiseSHWFSTilt
-# WithNoise = SHWFSTilt
-
-# NoNoise[NoNoise == 0] = np.nan
-# WithNoise[WithNoise == 0] = np.nan
-
-NoiseRMS = np.nanstd(Noise,axis=(-3,-2,-1))
 NoiseRMS[NoiseRMS==0] = np.nan
+NoscinNoiseRMS[NoscinNoiseRMS==0] = np.nan
 ROI = ((~np.isnan(NoiseRMS[...,0,0,0])))
 
 # Noise = np.zeros_like(WithNoise)
@@ -951,14 +958,17 @@ if TEST_GAUSS == True:
     # ░▒█░▒█░▀▀▄░█▀▀░█▀░░█░▒█░█░░░░▒█▄▄█░█░░█░░█░░█░░▀▀▄
     # ░░▀▄▄▀░▀▀▀░▀▀▀░▀░░░░▀▀▀░▀▀░░░▒█░░░░▀▀░░▀▀░░░▀░░▀▀▀
     ###############################################################################
+    
     if PLOT == True:
+        mask = np.ones_like(POSSIBLE,dtype=float)
+        mask[POSSIBLE==False] = np.nan
         for mm in np.arange(MM):
             for nn in np.arange(NN):
                 for oo in np.arange(OO):
                     # plt.figure()
                     # Figure 1
 
-                    if np.nansum(GaussNoise[...,mm,nn,oo] == False) != 0:
+                    if np.nansum((GaussNoise[...,mm,nn,oo] == False)[POSSIBLE]) != 0:
 
                         color_map = plt.cm.get_cmap('inferno')
                         reversed_color_map = color_map.reversed()
@@ -969,7 +979,7 @@ if TEST_GAUSS == True:
                         for kk in np.arange(KK):
                             for ll in np.arange(LL):
                                 plt.subplot(4,4,LL*(KK - kk - 1) + ll + 1)
-                                plt.pcolor(r0*100, dor0, GaussNoise[...,kk,ll,mm,nn,oo].T,
+                                plt.pcolor(r0*100, dor0, (mask[...,kk,ll]*GaussNoise[...,kk,ll,mm,nn,oo]).T,
                                         vmin=0,vmax=1,
                                         cmap=reversed_color_map,edgecolors='k',linewidths=0.5)
                                 # plt.colorbar()
@@ -986,7 +996,7 @@ if TEST_GAUSS == True:
                         # plt.colorbar()
                         # plt.xlabel('r0 (cm)')
                         # plt.ylabel('d/r0')
-                        plt.savefig('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/Gauss_or_not_{:}{:}{:}.png'.format(mm,nn,oo))
+                        # plt.savefig('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/Gauss_or_not_{:}{:}{:}.png'.format(mm,nn,oo))
                         plt.show();plt.clf()
                         plt.clf()
 
@@ -1089,13 +1099,14 @@ if TEST_GAUSS == True:
 # plt.show();plt.clf()
 
 W = 64/2
+n_cog = 17
 atm_error = (0.5*W**-2*(dor0)**(5./3.))**0.5
 photon_error = (2*W/N_phot_list)**0.5
 RON_error = np.zeros((MM,NN),dtype=float)
 NEW_RON_list = np.zeros((MM,NN),dtype=float)
 for mm in np.arange(MM):
     for nn in np.arange(NN):
-        RON_error[mm,nn] = (np.pi**2/3.*(RON_list[nn]/N_phot_list[mm])**2*(64**2)**2/(2)**2)**0.5
+        RON_error[mm,nn] = (np.pi**2/3.*(RON_list[nn]/N_phot_list[mm])**2*(n_cog**2)**2/(2)**2)**0.5
         NEW_RON_list[mm,nn] = RON_list[nn]/N_phot_list[mm]
 
 
@@ -1109,6 +1120,9 @@ for ii in np.arange(II):
                 if first_time[jj]:
                     plt.plot(N_phot_list,(NoiseRMS[ii,jj,kk,ll,:,0,0]).flatten(),
                              color = color_list[jj],label='dor0={}'.format(dor0[jj]))
+                    if kk and ll == 0:
+                        plt.plot(N_phot_list,(NoscinNoiseRMS[ii,jj,:,0,0]).flatten(),
+                                 color = color_list[jj],label='dor0={}'.format(dor0[jj]))
                     # plt.hlines(atm_error[jj],
                     #            N_phot_list.min(),
                     #            N_phot_list.max(),
@@ -1118,6 +1132,9 @@ for ii in np.arange(II):
                 else:
                     plt.plot(N_phot_list,(NoiseRMS[ii,jj,kk,ll,:,0,0]).flatten(),
                              color = color_list[jj])
+                    if kk and ll == 0:
+                        plt.plot(N_phot_list,(NoscinNoiseRMS[ii,jj,:,0,0]).flatten(),
+                                 color = color_list[jj])
 plt.plot(N_phot_list,photon_error,ls='--',label=('photon noise model'))
 plt.xscale('log')
 plt.yscale('log')
@@ -1129,6 +1146,7 @@ plt.savefig('photon_noise.png')#/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedDat
 plt.show();plt.clf()
 
 RON_rms = np.zeros((II,JJ,KK,LL,MM,NN),dtype=float)
+NoscinRON_rms = np.zeros((II,JJ,MM,NN),dtype=float)
 
 first_time = [True,True,True,True]
 for ii in np.arange(II):
@@ -1141,6 +1159,8 @@ for ii in np.arange(II):
                             continue
                         RON_rms[ii,jj,kk,ll,mm,nn] = ((NoiseRMS[ii,jj,kk,ll, mm,nn,0]**2
                                        - NoiseRMS[ii,jj,kk,ll, mm,0,0]**2)**0.5)
+                        NoscinRON_rms[ii,jj,mm,nn] = ((NoscinNoiseRMS[ii,jj, mm,nn,0]**2
+                                       - NoscinNoiseRMS[ii,jj, mm,0,0]**2)**0.5)
                         # RON_rms[ii,jj,kk,ll,mm,nn] = NoiseRMS[ii,jj,kk,ll, mm,nn,0]
                         if first_time[jj]:
                             # print(NEW_RON_list[mm,nn])
@@ -1148,6 +1168,10 @@ for ii in np.arange(II):
                             plt.plot(NEW_RON_list[mm,nn],
                                      RON_rms[ii,jj,kk,ll,mm,nn].flatten(),
                                      color = color_list[jj],label='dor0={}'.format(dor0[jj]), marker='.')
+                            if kk and ll == 0:
+                                plt.plot(NEW_RON_list[mm,nn],
+                                         NoscinRON_rms[ii,jj,mm,nn].flatten(),
+                                         color = color_list[jj],label='dor0={}'.format(dor0[jj]), marker='.')
                             first_time[jj] = False
                             # plt.hlines(atm_error[jj],
                             #            RON_list[1:].min(),
@@ -1156,8 +1180,12 @@ for ii in np.arange(II):
                             #            ls=':',color=color_list[jj])
                         else:
                             plt.plot(NEW_RON_list[mm,nn],
-                                     RON_rms[ii,jj,kk,ll,mm,nn].flatten(),
+                                     NoscinRON_rms[ii,jj,mm,nn].flatten(),
                                      color = color_list[jj], marker='.')
+                            if kk and ll == 0:
+                                plt.plot(NEW_RON_list[mm,nn],
+                                         NoscinRON_rms[ii,jj,mm,nn].flatten(),
+                                         color = color_list[jj], marker='.')
                             
 plt.plot(NEW_RON_list[:,1:].flatten(),RON_error[:,1:].flatten(),ls='--',label=('ron noise model'))
 plt.legend()
@@ -1169,6 +1197,7 @@ plt.savefig('readout_noise.png')#/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedDa
 plt.show();plt.clf()
 
 THRESHOLD_rms = np.zeros((II,JJ,KK,LL,MM,NN,OO),dtype=float)
+NoscinTHRESHOLD_rms = np.zeros((II,JJ,MM,NN,OO),dtype=float)
 first_time = [True,True,True,True]
 for ii in np.arange(II):
     for jj in np.arange(JJ):
@@ -1183,11 +1212,17 @@ for ii in np.arange(II):
                             # print(NoiseRMS[ii,jj,kk,ll, mm,nn,0].shape)
                             THRESHOLD_rms[ii,jj,kk,ll,mm,nn,oo] = ((NoiseRMS[ii,jj,kk,ll, mm,nn,oo]**2
                                           - NoiseRMS[ii,jj,kk,ll, mm,0,0]**2)**0.5)
+                            NoscinTHRESHOLD_rms[ii,jj,mm,nn,oo] = ((NoscinNoiseRMS[ii,jj, mm,nn,oo]**2
+                                          - NoscinNoiseRMS[ii,jj, mm,0,0]**2)**0.5)
                             # THRESHOLD_rms[ii,jj,kk,ll,mm,nn,oo] = NoiseRMS[ii,jj,kk,ll, mm,nn,oo]
                             if first_time[jj]:
                                 plt.plot(Threshold_list[oo],
                                          THRESHOLD_rms[ii,jj,kk,ll,mm,nn,oo].flatten(),
                                         color = color_list[jj],label='dor0={}'.format(dor0[jj]), marker='.')
+                                if kk and ll == 0:
+                                    plt.plot(Threshold_list[oo],
+                                             NoscinTHRESHOLD_rms[ii,jj,mm,nn,oo].flatten(),
+                                            color = color_list[jj],label='dor0={}'.format(dor0[jj]), marker='.')
                                 first_time[jj] = False
                                 # plt.hlines(atm_error[jj],
                                 #            Threshold_list[1:].min(),
@@ -1198,6 +1233,10 @@ for ii in np.arange(II):
                                 plt.plot(Threshold_list[oo],
                                          THRESHOLD_rms[ii,jj,kk,ll,mm,nn,oo].flatten(),
                                         color = color_list[jj], marker='.')
+                                if kk and ll == 0:
+                                    plt.plot(Threshold_list[oo],
+                                             NoscinTHRESHOLD_rms[ii,jj,mm,nn,oo].flatten(),
+                                            color = color_list[jj], marker='.')
 #plt.plot(RON_list[1:],RON_error[1:],ls='--',label=('ron noise model'))
 plt.legend()
 plt.ylabel('RMS-OPD (rad)')
@@ -1208,6 +1247,7 @@ plt.savefig('threshold.png')#/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/r
 plt.show();plt.clf()
 
 Another_threshold = np.zeros((II,JJ,KK,LL,MM,OO),dtype=float)
+NoscinAnother_threshold = np.zeros((II,JJ,KK,LL,MM,OO),dtype=float)
 first_time = [True,True,True,True]
 for ii in np.arange(II):
     for jj in np.arange(JJ):
@@ -1219,8 +1259,10 @@ for ii in np.arange(II):
                             continue
                         Another_threshold[ii,jj,kk,ll,mm,oo] = ((NoiseRMS[ii,jj,kk,ll,mm,0,oo]**2
                                                                  - NoiseRMS[ii,jj,kk,ll,mm,0,0]**2)**0.5)
-
-with open('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/NoiseVar.pkl', 'wb') as file:
+                        NoscinAnother_threshold[ii,jj,kk,ll,mm,oo] = ((NoscinNoiseRMS[ii,jj,mm,0,oo]**2
+                                                                 - NoscinNoiseRMS[ii,jj,mm,0,0]**2)**0.5)
+# with open('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/NoiseVar.pkl', 'wb') as file:
+with open('NoiseVar.pkl', 'wb') as file:
     var = {'NEW_RON_list' : NEW_RON_list,
            'N_phot_list' : N_phot_list,
            'atm_error' : atm_error,
@@ -1230,7 +1272,12 @@ with open('/mt/cfai/pkongkaew/NoiseSHWFSSlopes/processedData/NoiseVar.pkl', 'wb'
            'RON_rms' : RON_rms,
            'THRESHOLD_rms' : THRESHOLD_rms,
            'NoiseRMS' : NoiseRMS,
-           'Another_threshold' : Another_threshold}
+           'Another_threshold' : Another_threshold,
+           'Noscinphoton_rms' : NoscinNoiseRMS[...,0,0],
+           'NoscinRON_rms' : NoscinRON_rms,
+           'NoscinTHRESHOLD_rms' : NoscinTHRESHOLD_rms,
+           'NoscinNoiseRMS' : NoscinNoiseRMS,
+           'NoscinAnother_threshold' : NoscinAnother_threshold}
     pickle.dump(var,file)
 file.close()
 

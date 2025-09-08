@@ -8,8 +8,11 @@ Created on Tue Nov  5 17:58:36 2024
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+import os
 
 from scipy import stats
+
+os.chdir(r'C:\Users\gqmc62\OneDrive - Durham University\Documents\PhD\Codes\ThesisChapter4Plots')
 
 def gauss(x, mean, std, area):
     y = area*np.exp(-((x - mean)/std)**2/2.)/(std*np.sqrt(2*np.pi))*(x[1] - x[0])
@@ -32,7 +35,7 @@ del input_data
 # #     data = input_data[key_name]
 # #     globals()[key_name] = data
 
-with open('NoiseSHWFSSlopes/SHWFSNoiseScintillation0000.pkl', 'rb') as file:
+with open('Slopes/SHWFSNoiseScintillation0000.pkl', 'rb') as file:
     input_data = pickle.load(file)
 file.close()
 keys = input_data.keys()

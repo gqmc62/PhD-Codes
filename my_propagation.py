@@ -84,6 +84,28 @@ import mypropagationclass as MPROP
 import my_WFS as mwfs
 from astropy.io import fits
 
+
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 #
 # Preferences #
 #
@@ -2806,20 +2828,20 @@ def testPropScintillation(screens_list,wvl,real_z_list,r0HA,N,delta,tag=''):
     plt.errorbar(real_z_list,
                  logamp_variance[1:],
                  yerr=error_logamp_variance[1:],
-                 marker='o',ls='',capsize=5,label='Simulation', color='r')
-    plt.plot(real_z_list,logamp_variance_theory_approx,ls=':',marker='',
-             label='Rytov Approximation', color='g')
-    plt.hlines(0.6,real_z_list[0],real_z_list[-1],label='Saturation Level at Rytov#=0.6',
-                color='b', ls='--')
-    plt.vlines(saturate_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
-               label='full saturation, Rytov#=0.6',color='b')
-    plt.vlines(hard_scintillation_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
-               label='strong scintillation, Rytov#=0.35',color='c')
+                 marker='o',ls='',capsize=5,label='Measured', color='r')
+    plt.plot(real_z_list,logamp_variance_theory_approx,ls='-',marker='',
+             label='$\sigma^2_R$', color='b')
+    # plt.hlines(0.6,real_z_list[0],real_z_list[-1],label='Saturation Level at Rytov#=0.6',
+    #             color='b', ls='--')
+    # plt.vlines(saturate_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
+    #            label='full saturation, Rytov#=0.6',color='b')
+    # plt.vlines(hard_scintillation_point,logamp_variance[1:].min(),logamp_variance[1:].max(),
+    #            label='strong scintillation, Rytov#=0.35',color='c')
     plt.legend()
     plt.xlim(real_z_list.min()*0.9,real_z_list.max()*1.1)
     plt.ylim(logamp_variance[1:].min()*0.9,logamp_variance[1:].max()*1.1)
     plt.xlabel('Propagation distance (m)')
-    plt.ylabel('Variance of log-amplitude $\sigma^2_\chi$')
+    plt.ylabel('$\sigma^2_\chi$')
     plt.xscale('log')
     plt.yscale('log')
     plt.savefig('test_rytov_index' + tag + '.pdf',bbox_inches='tight')

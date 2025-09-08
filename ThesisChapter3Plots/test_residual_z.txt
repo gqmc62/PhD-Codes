@@ -1,0 +1,107 @@
+n_random = 100
+r0 = 0.02
+
+import soapy
+import numpy as np
+import os
+os.chdir('/mt/cfai-temp/pkongkaew/codes')
+import phase_screen_zernike_decomposition as z_decom
+os.chdir('/mt/cfai-temp/pkongkaew/codes')
+from aotools.functions import zernike
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from scipy.io import fits
+
+hdul = fits.open('/mt/cfai-temp/pkongkaew/bad_IM_A/iMat.fits')
+IM = hdul[0].data
+
+def my_unwrap(wrapped_phase, period=2*np.pi):
+    
+    # numpy unwrap start unwrap at 0 coordinate
+    # but for circular aperture there is no corner!
+    # if we unwrap by each quardrant there will be a corner! noice.
+    # but we may have to stitch them back together nicely
+    # so things should be de-piston to the center
+    
+    center = wrapped_phase.shape[-1]//2
+    unwrapped_phase = np.zeros_like(wrapped_phase)
+    
+    # ++ quardrant
+    wrapped_quardrant = wrapped_phase[...,center:,center:]
+    unwrapped_quardrant = np.unwrap(np.unwrap(wrapped_quardrant,axis=0),axis=1)
+      
+    unwrapped_quardrant -= unwrapped_quardrant[0,0]
+    unwrapped_phase[...,center:,center:] = unwrapped_quardrant
+    
+    # +- quardrant
+    wrapped_quardrant = wrapped_phase[...,center:,:center][:,::-1]
+    unwrapped_quardrant = np.unwrap(np.unwrap(wrapped_quardrant,axis=0),axis=1)
+      
+    unwrapped_quardrant -= unwrapped_quardrant[0,0]
+    unwrapped_phase[...,center:,:center] = unwrapped_quardrant[:,::-1]
+    
+    # -+ quardrant
+    wrapped_quardrant = wrapped_phase[...,:center,center:][::-1,:]
+    unwrapped_quardrant = np.unwrap(np.unwrap(wrapped_quardrant,axis=0),axis=1)
+      
+    unwrapped_quardrant -= unwrapped_quardrant[0,0]
+    unwrapped_phase[...,:center,center:] = unwrapped_quardrant[::-1,:]
+      
+    # -- quardrant
+    wrapped_quardrant = wrapped_phase[...,:center,:center][::-1,::-1]
+    unwrapped_quardrant = np.unwrap(np.unwrap(wrapped_quardrant,axis=0),axis=1)
+      
+    unwrapped_quardrant -= unwrapped_quardrant[0,0]
+    unwrapped_phase[...,:center,:center] = unwrapped_quardrant[::-1,::-1]
+    
+    return unwrapped_phase
+
+MODE = 100
+Zernike = zernike.zernikeArray(MODE, 180)
+GramSchmidt = z_decom.gram_schmidt_process(Zernike)
+PUPIL = Zernike[0]
+FlatZernike = Zernike.reshape((MODE, 180*180))
+FlatGramSchmidt = GramSchmidt.reshape((MODE, 180*180))
+GramSchmidtCoeff2ZernikeCoeff = z_decom.get_GramSchmidtCoeff2ZernikeCoeff(FlatZernike, FlatGramSchmidt)
+
+os.chdir('/mt/cfai-temp/pkongkaew/bad_IM_A')
+sim = soapy.Sim('/mt/cfai-temp/pkongkaew/conf/bad_IM_A.yaml')
+sim.config.configDict['Atmosphere']['r0'] = r0
+sim.config.configDict['Atmosphere']['scrnHeights'][0] = 0
+sim.config.configDict['DM'][2]['altitude'] = 0
+sim.aoinit()
+sim.dms[2].config.calibrate = False
+os.chdir('/mt/cfai-temp/pkongkaew/bad_IM_A')
+sim.makeIMat(forceNew=False)
+sim.config.dms[2].closed = False
+
+sim.aoloop()
+
+res_z = np.zeros((n_random,100),dtype=float)
+atm_z = np.zeros((n_random,100),dtype=float)
+for i in tqdm(range(n_random)):
+    sim.reset_loop()
+    sim.atmos.infinite_phase_screens[0].random_seed = np.random.randint(1,1000)
+    sim.atmos.infinite_phase_screens[0].make_initial_screen()
+    sim.atmos.moveScrns()
+    sim.aoloop()
+    atm_phase = my_unwrap(np.nan_to_num(np.angle(sim.sciPhase[0][0])))
+    res_phase = my_unwrap(np.nan_to_num(np.angle(sim.sciPhase[0][4])))
+    z0 = z_decom.get_ZernikeCoeff((atm_phase*PUPIL).flatten(),FlatGramSchmidt,GramSchmidtCoeff2ZernikeCoeff)
+    z1 = z_decom.get_ZernikeCoeff((res_phase*PUPIL).flatten(),FlatGramSchmidt,GramSchmidtCoeff2ZernikeCoeff)
+    atm_z[i] = z0
+    res_z[i] = z1
+
+
+
+plt.plot(np.arange(atm_z.shape[1]),np.var(atm_z,axis=0),label='atmosphere')
+plt.plot(np.arange(res_z.shape[1]),np.var(res_z,axis=0),label='residual')
+plt.plot(np.arange(len(theory))+1,theory,label='theory')
+plt.yscale('log')
+plt.legend()
+
+plt.savefig('test.png',bbox_inches='tight')
+plt.clf()
+
+
+

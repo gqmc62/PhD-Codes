@@ -93,7 +93,25 @@
 #         hdul.close()
         
 ##############################################################################
-        
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 24 10:21:29 2025
@@ -134,10 +152,11 @@ TRIAL = 50
 LOOP = 5
 CASES = 19
 
-r0 = 0.08
+r0 = 0.1
 
 
 TYPELIST = ['A','B','C']
+# TYPELIST = ['A']
 D = 0.4
 dsub = D/np.array([10,8,6])
 
@@ -186,7 +205,15 @@ for i_home in range(len(HOMELIST)):
 os.chdir(home)
 color_list = ['tab:blue','tab:orange','tab:green','tab:red','tab:purple',
               'tab:brown','tab:pink','tab:gray','tab:olive','tab:cyan']
-
+expect_rytov = np.empty(name_list.shape[0])
+expect_AS = np.copy(expect_rytov)
+for i in np.arange(expect_rytov.shape[0]):
+    expect_rytov[i] = float(name_list[i][5:9])
+    expect_AS[i] = float(name_list[i].strip()[12:-1])/100.
+name_list = []
+for cases in np.arange(CASES):
+    name_list.append('{:.2f}'.format(expect_rytov[cases]) + '$\sigma^2_{R,DM}$' 
+                     + ' - {:.0f}%'.format(expect_AS[cases]*100) + '$RMS_{AS}$')
 RUNAWAY_POS[RUNAWAY_POS==-1] = np.nan
 
 for i_rcond in range(len(rcond_list)):
@@ -252,8 +279,10 @@ for i_rcond in range(len(rcond_list)):
 #         # plt.xlim(0,4)
 #         plt.title(cases)
 #         plt.show()
-
-atm_wfe = (0.134*(0.4/r0)**(5./3.))**0.5*500/2/3.14
+wvl=500e-9
+D=0.4
+atm_wfe = (0.134*(0.4/r0)**(5./3.))**0.5*500/2/3.14#-(0.162*wvl**2*r0**(-5/3)*D**(-1/3))**0.5*D/1e-9
+# atm_wfe = (1.0299*(0.4/r0)**(5./3.))**0.5*500/2/3.14
 ao_wfe = ((0.354)*((dsub)/r0)**(5./3.))**0.5/2/3.14*500
 # ao_wfe = ((0.134)*((dsub)/0.05)**(5./3.))**0.5/2/3.14*500
     
@@ -292,42 +321,82 @@ ao_wfe = ((0.354)*((dsub)/r0)**(5./3.))**0.5/2/3.14*500
 #         plt.title('dsub:{:.2f}cm , tub:{} , rcond:{}'.format(dsub[i_dsub]*100,NAMELIST[i_dsub][i_name],rcond_list[i_rcond]))
 #         plt.show()
 
+color_list = np.array([color_list,color_list,color_list]).flatten()
 ###############################################################################
-    
-
+i_color = 0
+plt.figure()
 for i_name in range(len(name_list)):
-    if i_name != 16:
+    if (i_name != np.array([0,15,16,17,7])).all():
         continue
-    for i_rcond in range(len(rcond_list)):
-        # first compare undistorted of different rcond
-        for i_dsub in range(len(dsub)):
-            # for i_name in range(len(NAMELIST[i_dsub])):
-            # i_name = 16
-            # for i_rcond in range(len(rcond_list)):
+    i_rcond = 0
+    i_dsub = 1
+    # for i_name in range(len(NAMELIST[i_dsub])):
+    # i_name = 16
+    # for i_rcond in range(len(rcond_list)):
+    
+    # plt.errorbar(np.arange(5),
+    #               np.nanmean(perfect_WFE[i_rcond,i_dsub,i_name],axis=0),
+    #               yerr=np.nanstd(perfect_WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(perfect_WFE.shape[3]),
+    #           #label='No distortion',#', dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
+    #           ls=':',color=color_list[i_dsub],
+    #           capsize=5,marker='o')
+    plt.errorbar(np.arange(5),
+                  np.nanmean(WFE[i_rcond,i_dsub,i_name],axis=0),
+                  yerr=np.nanstd(WFE[i_rcond,i_dsub,i_name],axis=0)/WFE.shape[3]**0.5,
+                  marker='s',capsize=5,label=name_list[i_name].strip(),color=color_list[i_color])#'With distortion')#', 
+    i_color += 1
+# plt.hlines([ao_wfe[i_dsub]],0,4,label='AO corrected',color=color_list[i_color])
+# plt.hlines([atm_wfe],0,4,label='Turbulence',color=color_list[i_color + 1])
+# plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.tight_layout()
+# plt.subplots_adjust(right=0.75)
+plt.legend()
+plt.ylim(0,350)
+# plt.yscale('log')
+plt.ylabel('RMS WFE (nm)')
+plt.xlabel('Control loop iterations')
+# plt.title('tub:{},rcond={}'.format(NAMELIST[i_dsub][i_name],rcond_list[i_rcond]))
+plt.savefig('control_loop.pdf', bbox_inches='tight',dpi=600)
+plt.show()
+
+
+# for i_name in range(len(name_list)):
+#     if i_name != 16:
+#         continue
+#     for i_rcond in range(len(rcond_list)):
+#         # first compare undistorted of different rcond
+#         plt.figure(figsize=(6,4))
+#         for i_dsub in range(len(dsub)):
+#             # if i_dsub != 0:
+#             #     continue
+#             # for i_name in range(len(NAMELIST[i_dsub])):
+#             # i_name = 16
+#             # for i_rcond in range(len(rcond_list)):
             
-            plt.errorbar(np.arange(5),
-                          np.nanmean(perfect_WFE[i_rcond,i_dsub,i_name],axis=0),
-                          yerr=np.nanstd(perfect_WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(perfect_WFE.shape[3]),
-                      label='no distortion, dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
-                      ls=':',color=color_list[i_dsub],
-                      capsize=5,marker='o')
-            plt.errorbar(np.arange(5),
-                          np.nanmean(WFE[i_rcond,i_dsub,i_name],axis=0),
-                          yerr=np.nanstd(WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(WFE.shape[3]),
-                          marker='s',capsize=5,ls='-',color=color_list[i_dsub],
-                      label='with distortion, dsub:{:.1f}cm'.format(dsub[i_dsub]*100))
-            plt.hlines([ao_wfe[i_dsub]],0,4,label='ao corrected, dsub:{:.1f}cm'.format(dsub[i_dsub]*100),color=color_list[i_dsub])
-        plt.hlines([atm_wfe],0,4,label='turbulence',color=color_list[i_dsub + 1])
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.tight_layout()
-        plt.subplots_adjust(right=0.75)
-        # plt.legend()
-        plt.ylim(0,500)
-        plt.ylabel('RMS WFE (nm)')
-        plt.xlabel('Control loop iterations')
-        # plt.title('tub:{},rcond={}'.format(NAMELIST[i_dsub][i_name],rcond_list[i_rcond]))
-        plt.savefig('control_loop.pdf', bbox_inches='tight')
-        plt.show()
+#             # plt.errorbar(np.arange(5),
+#             #               np.nanmean(perfect_WFE[i_rcond,i_dsub,i_name],axis=0),
+#             #               yerr=np.nanstd(perfect_WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(perfect_WFE.shape[3]),
+#             #           #label='No distortion',#', dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
+#             #           ls=':',color=color_list[i_dsub],
+#             #           capsize=5,marker='o')
+#             plt.errorbar(np.arange(5),
+#                           np.nanmean((WFE[i_rcond,i_dsub,i_name]**2 - perfect_WFE[i_rcond,i_dsub,i_name]**2)**0.5,axis=0),
+#                           yerr=np.nanstd((WFE[i_rcond,i_dsub,i_name]**2- perfect_WFE[i_rcond,i_dsub,i_name]**2)**0.5,axis=0)/WFE.shape[3]**0.5,
+#                           marker='s',capsize=5,ls='--',color=color_list[i_dsub],# + 1],
+#                       label='dsub:{:.1f}cm'.format(dsub[i_dsub]*100))#'With distortion')#', 
+#             # plt.hlines([ao_wfe[i_dsub]],0,4,label='AO corrected',#', dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
+#             #            color=color_list[i_dsub + 2])
+#         # plt.hlines([atm_wfe],0,4,label='Turbulence',color=color_list[i_dsub + 3])
+#         # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+#         plt.tight_layout()
+#         plt.subplots_adjust(right=0.75)
+#         plt.legend()
+#         # plt.ylim(0,500)
+#         plt.ylabel('RMS WFE (nm)')
+#         plt.xlabel('Control loop iterations')
+#         # plt.title('tub:{},rcond={}'.format(NAMELIST[i_dsub][i_name],rcond_list[i_rcond]))
+#         plt.savefig('control_loop.pdf', bbox_inches='tight',dpi=600)
+#         plt.show()
 
 
 # dif = np.zeros_like(WFE)
@@ -424,39 +493,48 @@ control_error_error /= count**0.5
 # plt.legend()
 # plt.show()
         
-        
+
 for i_name in range(len(name_list)):
     if i_name != 0:
         continue
     for i_rcond in range(len(rcond_list)):
         # first compare undistorted of different rcond
+        # plt.figure(figsize=figsize)
+        # for i in range(19):
+        #     for j in range(50):
+        #         plt.plot(perfect_WFE[i_rcond,0,i,j])
         for i_dsub in range(len(dsub)):
+            # if i_dsub != 0:
+            #     continue
             # for i_name in range(len(NAMELIST[i_dsub])):
             # i_name = 16
             # for i_rcond in range(len(rcond_list)):
             
             plt.errorbar(np.arange(5),
-                          np.nanmean(perfect_WFE[i_rcond,i_dsub,i_name],axis=0),
-                          yerr=np.nanstd(perfect_WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(perfect_WFE.shape[3]),
-                      label='no distortion, dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
-                      ls=':',color=color_list[i_dsub],
+                          np.nanmean(perfect_WFE[i_rcond,i_dsub],axis=(0,1)),
+                          yerr=np.nanstd(perfect_WFE[i_rcond,i_dsub],axis=(0,1))/np.sqrt(perfect_WFE.shape[3]*perfect_WFE.shape[2]),
+                      label='Subap.={:.1f}cm'.format(dsub[i_dsub]*100),
+                      ls='-',color=color_list[i_dsub],
                       capsize=5,marker='o')
             # plt.errorbar(np.arange(5),
             #               np.nanmean(WFE[i_rcond,i_dsub,i_name],axis=0),
-            #               yerr=np.nanstd(WFE[i_rcond,i_dsub,i_name],axis=0)/np.sqrt(WFE.shape[3]),
+            #               yerr=np.nanstd(WFE[i_rcond,i_dsub,i_name],axis=0),#/np.sqrt(WFE.shape[3]),
             #               marker='s',capsize=5,ls='-',color=color_list[i_dsub],
             #           label='with distortion, dsub:{:.1f}cm'.format(dsub[i_dsub]*100))
-            plt.hlines([ao_wfe[i_dsub]],0,4,label='ao corrected, dsub:{:.1f}cm'.format(dsub[i_dsub]*100),color=color_list[i_dsub])
-        plt.hlines([atm_wfe],0,4,label='turbulence',color=color_list[i_dsub + 1])
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        #     plt.hlines([ao_wfe[i_dsub]],0,4,#label='AO corrected',#', dsub:{:.1f}cm'.format(dsub[i_dsub]*100),
+        #                 color=color_list[i_dsub],ls='--')
+        # plt.hlines([atm_wfe],0,4,color=color_list[i_dsub+1],ls='-')#,label='Turbulence'
+        # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.legend()
         plt.tight_layout()
-        plt.subplots_adjust(right=0.75)
+        # plt.subplots_adjust(right=0.75)
         # plt.legend()
-        # plt.ylim(0,500)
+        plt.ylim(0,150)
+        # plt.yscale('log')
         plt.ylabel('RMS WFE (nm)')
         plt.xlabel('Control loop iterations')
         # plt.title('tub:{},rcond={}'.format(NAMELIST[i_dsub][i_name],rcond_list[i_rcond]))
-        plt.savefig('control_loop_undistort.pdf', bbox_inches='tight')
+        plt.savefig('control_loop_undistort.pdf', bbox_inches='tight',dpi=600)
         plt.show()
 
-        
+

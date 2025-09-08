@@ -20,6 +20,27 @@ from matplotlib import pyplot as plt
 from aotools.turbulence.infinitephasescreen import PhaseScreenVonKarman
 from tqdm import tqdm
 
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 def bin_this(A, w):
     # a = numpy.nanmean(A[:(A.shape[0]//w)*w,
     #       :(A.shape[1]//w)*w].reshape(
@@ -32,7 +53,7 @@ def bin_this(A, w):
     return a
 
 
-
+CONVERT = 500/2/np.pi
 n1 = 64 # this is also fov in wvl/2D
 D = 0.05
 wvl = 500e-9
@@ -137,23 +158,33 @@ for i_r0 in np.arange(r0_list.shape[0]):
     # plt.xscale('log')
     # plt.show()
     
-    var_true_slope = np.var(true_slope,axis=(0,2))
-    error_of_var_true_slope = 2*var_true_slope/np.sqrt(var_true_slope.shape[0]*2 - 2)
-    var = np.var(slope_error_list,axis=(0,2))
-    error_of_var = 2*var/np.sqrt(var.shape[0]*2 - 2)
+    var_true_slope = np.std(true_slope,axis=(0,2))*CONVERT
+    error_of_var_true_slope = var_true_slope/np.sqrt(var_true_slope.shape[0]*2 - 2)
+    var = np.std(slope_error_list,axis=(0,2))*CONVERT
+    error_of_var = var/np.sqrt(var.shape[0]*2 - 2)
     
     plt.errorbar(2**(np.arange(zero_pad_factor_range - 1) + 1),var,yerr=error_of_var,
-                 capsize=5,marker='o',label='{:.2}D/r$_0$'.format(D/r0),
+                 capsize=5,marker='o',
                  color=color_list[i_r0])
     plt.errorbar(2**(np.arange(zero_pad_factor_range - 1) + 1),var_true_slope,yerr=error_of_var_true_slope,
                  capsize=5,marker='o',#label='slope_level{:.2}D/r$_0$'.format(D/r0),
                  ls=':',
                  color=color_list[i_r0])
+
+legend_elements = [
+    Line2D([0], [0], color='black', linestyle='-', marker='', label='Measurement error'),
+    Line2D([0], [0], color='black', linestyle='--', marker='', label='Atmospheric noise'),
+    Line2D([0], [0], color=color_list[0], linestyle='-', marker='', label='$d/r_0$=0.5'),
+    Line2D([0], [0], color=color_list[1], linestyle='-', marker='', label='$d/r_0$=1'),
+    Line2D([0], [0], color=color_list[2], linestyle='-', marker='', label='$d/r_0$=2'),
+    Line2D([0], [0], color=color_list[3], linestyle='-', marker='', label='$d/r_0$=3'),
+    ]
+plt.legend(handles=legend_elements, loc='best')
 plt.yscale('log')
 plt.xscale('log')
-plt.ylabel('varaince of OPD in rad$^2$')
-plt.xlabel('zero-padded size (x no-zero-padded)')
-plt.legend()
+plt.ylabel('RMS OPD (nm)')
+plt.xlabel('Zero-padded size (x no-zero-padded)')
+# plt.legend()
 plt.savefig('zero_padding_wfs-{:d}px.pdf'.format(n1),bbox_inches='tight')
 plt.show()
 plt.clf()

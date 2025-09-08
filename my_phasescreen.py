@@ -60,6 +60,28 @@ import pickle
 color_map = plt.cm.get_cmap('viridis')
 reversed_color_map = color_map.reversed()
 
+
+from matplotlib.lines import Line2D
+import matplotlib as mpl
+fontsize = 10
+figsize = [4,4]
+dpi = 600
+
+mpl.rcParams['axes.titlesize'] = fontsize
+mpl.rcParams['axes.labelsize'] = fontsize
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams['legend.fontsize'] = fontsize
+mpl.rcParams['figure.titlesize'] = fontsize
+mpl.rcParams['figure.figsize'] = figsize
+mpl.rcParams['figure.dpi'] = dpi
+mpl.rcParams['savefig.dpi'] = dpi
+mpl.rcParams['savefig.bbox'] = 'tight'
+# mpl.rcParams['savefig.bbox_inches'] = 'tight'
+mpl.rcParams['savefig.format'] = 'pdf'
+
+color_list = np.array(list(mpl.colors.TABLEAU_COLORS.keys()))
+
 ###############################################################################
 ########################################################################
 
@@ -1741,7 +1763,276 @@ def tiptilt_variance_adjust_to_vK(D,L0):
     adjust = (1 - 1.42*e**(1./3.) + 3.70*e**2 - 4.01*e**(7./3.) + 4.21*e**4 - 4.00*e**(13./3.))
     return adjust
 
-def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
+# def testPhaseScreen_thought_std_is_better(inputFileName, saveFile=True, saveFigure=True):
+    
+#     n_modes = 20 + 1
+    
+#     hdulist = fits.open(inputFileName)
+#     hdu = hdulist[0]
+#     phase = hdu.data
+#     D = hdu.header['DIAM']
+#     r0 = hdu.header['FRIED']
+#     L0 = hdu.header['OUTERL']
+#     l0 = hdu.header['INNERL']
+#     hdulist.close()
+    
+#     SAVENAME = 'outputTestPhaseScreen_' + inputFileName
+    
+#     RANDOM = phase.shape[0]
+#     N = phase.shape[1]
+#     pixel_scale = D/N
+    
+#     PSD = np.zeros((RANDOM, N, N), dtype=float)
+#     ZernikeCoeff = np.zeros((RANDOM, n_modes), dtype=float)
+#     phaseDifSquareX = np.zeros((RANDOM, N, N), dtype=float)
+#     phaseDifSquareY = np.zeros((RANDOM, N, N), dtype=float)
+    
+#     Zernike = zernike.zernikeArray(n_modes, N)
+#     GramSchmidt = gram_schmidt_process(Zernike)
+#     PUPIL = Zernike[0]
+#     FlatZernike = Zernike.reshape((n_modes, N*N))
+#     FlatGramSchmidt = GramSchmidt.reshape((n_modes, N*N))
+#     GramSchmidtCoeff2ZernikeCoeff = get_GramSchmidtCoeff2ZernikeCoeff(FlatZernike, FlatGramSchmidt)
+    
+#     for random in tqdm(np.arange(RANDOM)):
+#         ###############################################################################
+#         ########################################################################
+#         phaseDifSquareX[random] = get_phaseDifSquareX(phase[random])
+#         phaseDifSquareY[random] = get_phaseDifSquareY(phase[random])
+#         PSD[random] = get_PSD(phase[random], pixel_scale)
+#         ZernikeCoeff[random] = get_ZernikeCoeff((phase[random]*PUPIL).flatten(), FlatGramSchmidt, GramSchmidtCoeff2ZernikeCoeff)
+#         ###############################################################################
+#         ########################################################################
+        
+#     ALPHA1 = 1#0.2
+#     ALPHA2 = 1#0.2
+    
+
+#     def log_bin_with_error(x, y, yerr=None, num_bins=20):
+#         """
+#         Bin x, y (and optional yerr) in logarithmic bins.
+        
+#         Parameters
+#         ----------
+#         x : array-like
+#             Independent variable (must be positive for log binning)
+#         y : array-like
+#             Dependent variable
+#         yerr : array-like, optional
+#             Error in y values. If provided, binned y will be a weighted mean,
+#             and binned error is computed accordingly.
+#         num_bins : int, optional
+#             Number of log-spaced bins (default=50)
+        
+#         Returns
+#         -------
+#         binned_x : ndarray
+#             Log-binned x values (mean of x in each bin)
+#         binned_y : ndarray
+#             Binned y values (weighted mean if yerr is provided, else mean)
+#         binned_yerr : ndarray
+#             Binned y errors (standard error if yerr not provided)
+#         """
+#         x = np.asarray(x)
+#         y = np.asarray(y)
+        
+#         # Filter out non-positive x
+#         mask = x > 0
+#         x = x[mask]
+#         y = y[mask]
+#         if yerr is not None:
+#             yerr = np.asarray(yerr)[mask]
+        
+#         # Log-spaced bins
+#         bins = np.logspace(np.log10(np.min(x)), np.log10(np.max(x)), num_bins + 1)
+#         indices = np.digitize(x, bins)
+        
+#         binned_x = []
+#         binned_y = []
+#         binned_yerr = []
+        
+#         for i in range(1, len(bins)):
+#             mask_bin = indices == i
+#             if np.any(mask_bin):
+#                 xi = x[mask_bin]
+#                 yi = y[mask_bin]
+                
+#                 binned_x.append(np.mean(xi))
+                
+#                 if yerr is not None:
+#                     yierr = yerr[mask_bin]
+#                     # weights = 1 / yierr**2
+#                     weighted_mean = np.mean(yi)#np.sum(weights * yi) / np.sum(weights)
+#                     binned_y.append(weighted_mean)
+#                     # Weighted error of the mean
+#                     err = np.mean(yierr**2)**0.5
+#                     # binned_yerr.append(np.sqrt(1 / np.sum(weights)))
+#                     binned_yerr.append(err)
+#                 else:
+#                     binned_y.append(np.mean(yi))
+#                     binned_yerr.append(np.std(yi) )#/ np.sqrt(len(yi)))  # standard error
+        
+#         return np.array(binned_x), np.array(binned_y), np.array(binned_yerr)
+
+    
+    
+#     structure_function_x = np.mean(phaseDifSquareX, axis=(0,2))
+#     error_structure_function_x = np.std(phaseDifSquareX, axis=(0,2), ddof=1)#/np.sqrt(RANDOM)
+#     structure_function_y = np.mean(phaseDifSquareY, axis=(0,1))
+#     error_structure_function_y = np.std(phaseDifSquareY, axis=(0,1), ddof=1)#/np.sqrt(RANDOM)
+#     theoretical_structure_function = vonKarmanStructureFunction(r0, N, pixel_scale, L0)
+#     kolmogorov_structure_function = KolmogorovStructureFunction(r0, N, pixel_scale)
+#     radius = np.arange(N)*pixel_scale
+    
+#     a1,b1,c1 = log_bin_with_error(radius,structure_function_x,error_structure_function_x)
+#     a2,b2,c2 = log_bin_with_error(radius,structure_function_y,error_structure_function_y)
+    
+#     plt.plot(radius, theoretical_structure_function,
+#              label='von Karman', ls='-', marker='',color='r')
+#     plt.plot(radius, kolmogorov_structure_function,
+#              label='Kolmogorov', ls='-', marker='',color='b')
+#     plt.plot(a1, b1,
+#              ls='-',marker='',label='Measured x-axis',
+#              alpha=ALPHA1,color='c')
+#     plt.plot(a1, b1+c1,
+#              ls='--',marker='',
+#              alpha=ALPHA1,color='c')
+#     plt.plot(a2, b2,
+#              ls='-',marker='',label='Measured y-axis',
+#              alpha=ALPHA1,color='m')
+#     plt.plot(a2, b2+2,
+#              ls='--',marker='',
+#              alpha=ALPHA1,color='m')
+#     # plt.errorbar(radius, np.abs(structure_function_x - theoretical_structure_function),
+#     #              yerr=error_structure_function_x,
+#     #              ls='',marker='o', capsize=5,label='Error x-axis',
+#     #              alpha=ALPHA1)
+#     # plt.errorbar(radius, np.abs(structure_function_y - theoretical_structure_function),
+#     #              yerr=error_structure_function_y,
+#     #              ls='',marker='o', capsize=5,label='Error y-axis',
+#     #              alpha=ALPHA1)
+#     plt.xscale('log')
+#     plt.yscale('log')
+#     plt.legend()
+#     plt.xlabel('Separation (m)')
+#     plt.ylabel('Structure function (rad$^2$)')
+#     plt.xlim(radius.min(),radius.max()*2)
+#     plt.ylim(np.nanmin(theoretical_structure_function)/10,
+#              np.nanmax(theoretical_structure_function)*10)
+#     # plt.title('{:d}'.format(RANDOM)
+#     #         + 'structure_function\n'
+#     #         + SAVENAME)
+#     if saveFigure == True:
+#         plt.savefig(SAVENAME[:-5]
+#                 + '_structure_function'
+#                 + '.pdf', bbox_inches='tight')
+#     plt.show()
+    
+#     mean_PSD_x = ((PSD)[:,int(N/2 + 1) :,int(N/2) ]).mean(0)
+#     error_mean_PSD_x = ((PSD.T)[:,int(N/2 + 1) :,int(N/2) ]).std(0)#/np.sqrt(RANDOM)
+#     mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).mean(0)
+#     error_mean_PSD_y = ((PSD)[:,int(N/2),int(N/2 + 1) : ]).std(0)#/np.sqrt(RANDOM)
+#     theoretical_PSD = psd_function(r0, N, pixel_scale, L0, l0)[int(N/2),int(N/2 + 1) : ]
+#     kolmogorov_PSD = kolmogorov_psd_function(r0, N, pixel_scale)[int(N/2),int(N/2 + 1) : ]
+#     f = (np.arange(N/2-1) + 1)/N/pixel_scale
+    
+#     a1,a2,a3 = log_bin_with_error(f,mean_PSD_x,error_mean_PSD_x)
+#     b1,b2,b3 = log_bin_with_error(f,mean_PSD_y,error_mean_PSD_y)
+    
+#     plt.plot(f, theoretical_PSD,
+#              label='von Karman', ls='-', marker='',color='r')
+#     plt.plot(f, kolmogorov_PSD,
+#              label='Kolmogorov', ls='-', marker='',color='b')
+#     # print(f.shape,mean_PSD_x.shape,error_mean_PSD_x.shape,PSD.shape)
+#     plt.plot(a1, a2,
+#              ls='-',marker='',
+#                  label='Measured x-axis',alpha=ALPHA2,color='c')
+#     plt.plot(a1, a2+a3,
+#              ls='--',marker='',
+#              alpha=ALPHA2,color='c')
+#     plt.plot(b1, b2,
+#              ls='-',marker='',
+#              label='Measured y-axis',alpha=ALPHA2,color='m')
+#     plt.plot(b1, b2+b3,
+#              ls='--',marker='',
+#                  alpha=ALPHA2,color='m')
+#     # plt.errorbar(f, np.abs(mean_PSD_x - theoretical_PSD),
+#     #              yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
+#     #              label='Error x-axis',alpha=ALPHA2)
+#     # plt.errorbar(f, np.abs(mean_PSD_y - theoretical_PSD),
+#     #              yerr=error_mean_PSD_y,ls='',marker='o', capsize=5,
+#     #              label='Error y-axis',alpha=ALPHA2)
+#     plt.ylim(np.nanmin(theoretical_PSD)/10,np.nanmax(theoretical_PSD)*10)
+#     plt.xscale('log')
+#     plt.yscale('log')
+#     plt.xlabel('Spatial frequency (1/m)')
+#     plt.ylabel('Phase power spectrum density (rad$^2$ m$^2$)')
+#     # plt.title('{:d}'.format(RANDOM)
+#     #         + 'PSD\n'
+#     #         + SAVENAME)
+#     plt.legend()
+#     if saveFigure == True:
+#         plt.savefig(SAVENAME[:-5]
+#                 + '_PSD'
+#                 + '.pdf', bbox_inches='tight')
+#     plt.show()
+    
+#     variance_ZernikeCoeff = np.var(ZernikeCoeff, ddof=1, axis=0)[1:]
+#     error_variance_ZernikeCoeff = 2*variance_ZernikeCoeff/np.sqrt(2*N - 2)
+#     n_modes = variance_ZernikeCoeff.shape[0]
+#     modes = np.arange(n_modes) + 1
+#     theoretical_variance_ZernikeCoeff = noll_variance(n_modes,N,pixel_scale,r0)
+#     e = N*pixel_scale/L0
+#     adjust = (1 - 1.42*e**(1./3.) + 3.70*e**2 - 4.01*e**(7./3.) + 4.21*e**4 - 4.00*e**(13./3.))
+#     L0TipTiltVariance = theoretical_variance_ZernikeCoeff[:2] * adjust
+    
+#     temp = np.copy(theoretical_variance_ZernikeCoeff)
+#     temp[:2] = L0TipTiltVariance
+#     plt.plot(modes, temp, label='von Karman',color='r')
+#     plt.plot(modes, theoretical_variance_ZernikeCoeff, label='Kolmogorov',marker='',ls='-',color='b')
+#     plt.errorbar(modes, variance_ZernikeCoeff, yerr=error_variance_ZernikeCoeff,
+#                  label='Measured', marker='o', ls='', capsize=5,color='c')
+#     theoretical_variance_ZernikeCoeff[:2] = theoretical_variance_ZernikeCoeff[:2] * adjust
+#     # plt.errorbar(modes, np.abs(variance_ZernikeCoeff - theoretical_variance_ZernikeCoeff),
+#     #              yerr=error_variance_ZernikeCoeff,
+#     #              label='Error', marker='o', ls='', capsize=5)
+#     plt.yscale('log')
+#     plt.xlabel('Zernike modes')
+#     plt.ylabel('Variance of coefficient (rad$^2$)')
+#     plt.legend()
+#     plt.ylim(np.nanmin(theoretical_variance_ZernikeCoeff)/10, np.nanmax(theoretical_variance_ZernikeCoeff)*10)
+#     # plt.title('{:d}'.format(RANDOM)
+#     #         + 'ZernikeVariances\n'
+#     #         + SAVENAME)
+#     if saveFigure == True:
+#         plt.savefig(SAVENAME[:-5]
+#                 + '_ZernikeCoeff'
+#                 + '.pdf', bbox_inches='tight')
+#     plt.show()
+    
+#     if saveFile == True:
+        
+#         myvar = {'structure_function_x' : structure_function_x,
+#                  'structure_function_y' : structure_function_y,
+#                  'error_structure_function_x' : error_structure_function_x,
+#                  'error_structure_function_y' : error_structure_function_y,
+#                  'theoretical_structure_function' : theoretical_structure_function,
+                 
+#                  'mean_PSD_x' : mean_PSD_x,
+#                  'PSD_y' : mean_PSD_y,
+#                  'mean_PSD_y' : error_mean_PSD_x,
+#                  'error_PSD_y' : error_mean_PSD_y,
+#                  'theoretical_PSD' : theoretical_PSD,
+                 
+#                  'variance_ZernikeCoeff' : variance_ZernikeCoeff,
+#                  'error_variance_ZernikeCoeff' : error_variance_ZernikeCoeff,
+#                  'theoretical_variance_ZernikeCoeff' : theoretical_variance_ZernikeCoeff}
+
+#         with open(SAVENAME + '.pkl', 'wb') as file:
+#             pickle.dump(myvar, file)
+#             file.close()
+
+def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):#original
     
     n_modes = 20 + 1
     
@@ -1782,8 +2073,75 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
         ###############################################################################
         ########################################################################
         
-    ALPHA1 = 0.5
-    ALPHA2 = 0.5
+    ALPHA1 = 1#0.2
+    ALPHA2 = 1#0.2
+    
+
+    def log_bin_with_error(x, y, yerr=None, num_bins=20):
+        """
+        Bin x, y (and optional yerr) in logarithmic bins.
+        
+        Parameters
+        ----------
+        x : array-like
+            Independent variable (must be positive for log binning)
+        y : array-like
+            Dependent variable
+        yerr : array-like, optional
+            Error in y values. If provided, binned y will be a weighted mean,
+            and binned error is computed accordingly.
+        num_bins : int, optional
+            Number of log-spaced bins (default=50)
+        
+        Returns
+        -------
+        binned_x : ndarray
+            Log-binned x values (mean of x in each bin)
+        binned_y : ndarray
+            Binned y values (weighted mean if yerr is provided, else mean)
+        binned_yerr : ndarray
+            Binned y errors (standard error if yerr not provided)
+        """
+        x = np.asarray(x)
+        y = np.asarray(y)
+        
+        # Filter out non-positive x
+        mask = x > 0
+        x = x[mask]
+        y = y[mask]
+        if yerr is not None:
+            yerr = np.asarray(yerr)[mask]
+        
+        # Log-spaced bins
+        bins = np.logspace(np.log10(np.min(x)), np.log10(np.max(x)), num_bins + 1)
+        indices = np.digitize(x, bins)
+        
+        binned_x = []
+        binned_y = []
+        binned_yerr = []
+        
+        for i in range(1, len(bins)):
+            mask_bin = indices == i
+            if np.any(mask_bin):
+                xi = x[mask_bin]
+                yi = y[mask_bin]
+                
+                binned_x.append(np.mean(xi))
+                
+                if yerr is not None:
+                    yierr = yerr[mask_bin]
+                    weights = 1 / yierr**2
+                    weighted_mean = np.sum(weights * yi) / np.sum(weights)
+                    binned_y.append(weighted_mean)
+                    # Weighted error of the mean
+                    binned_yerr.append(np.sqrt(1 / np.sum(weights)))
+                else:
+                    binned_y.append(np.mean(yi))
+                    binned_yerr.append(np.std(yi) / np.sqrt(len(yi)))  # standard error
+        
+        return np.array(binned_x), np.array(binned_y), np.array(binned_yerr)
+
+    
     
     structure_function_x = np.mean(phaseDifSquareX, axis=(0,2))
     error_structure_function_x = np.std(phaseDifSquareX, axis=(0,2), ddof=1)/np.sqrt(RANDOM)
@@ -1792,34 +2150,38 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     theoretical_structure_function = vonKarmanStructureFunction(r0, N, pixel_scale, L0)
     kolmogorov_structure_function = KolmogorovStructureFunction(r0, N, pixel_scale)
     radius = np.arange(N)*pixel_scale
+    
+    a1,b1,c1 = log_bin_with_error(radius,structure_function_x,error_structure_function_x)
+    a2,b2,c2 = log_bin_with_error(radius,structure_function_y,error_structure_function_y)
+    
     plt.plot(radius, theoretical_structure_function,
-             label='von Karman Structure Function', ls='-', marker='')
+              label='von Karman', ls='-', marker='',color='r')
     plt.plot(radius, kolmogorov_structure_function,
-             label='Kolmogorov Structure Function', ls=':', marker='')
-    plt.errorbar(radius, structure_function_x,
-                 yerr=error_structure_function_x,
-                 ls='',marker='o', capsize=5,label='measured x-axis',
-                 alpha=ALPHA1)
-    plt.errorbar(radius, structure_function_y,
-                 yerr=error_structure_function_y,
-                 ls='',marker='o', capsize=5,label='measured y-axis',
-                 alpha=ALPHA1)
-    plt.errorbar(radius, np.abs(structure_function_x - theoretical_structure_function),
-                 yerr=error_structure_function_x,
-                 ls='',marker='o', capsize=5,label='abs difference x-axis',
-                 alpha=ALPHA1)
-    plt.errorbar(radius, np.abs(structure_function_y - theoretical_structure_function),
-                 yerr=error_structure_function_y,
-                 ls='',marker='o', capsize=5,label='abs difference y-axis',
-                 alpha=ALPHA1)
+              label='Kolmogorov', ls='--', marker='',color='b')
+    plt.errorbar(a1, b1,
+                  yerr=c1,
+                  ls='',marker='o', capsize=5,label='Measured x-axis',
+                  alpha=ALPHA1,color='c')
+    plt.errorbar(a2, b2,
+                  yerr=c2,
+                  ls='',marker='o', capsize=5,label='Measured y-axis',
+                  alpha=ALPHA1,color='m')
+    # plt.errorbar(radius, np.abs(structure_function_x - theoretical_structure_function),
+    #              yerr=error_structure_function_x,
+    #              ls='',marker='o', capsize=5,label='Error x-axis',
+    #              alpha=ALPHA1)
+    # plt.errorbar(radius, np.abs(structure_function_y - theoretical_structure_function),
+    #              yerr=error_structure_function_y,
+    #              ls='',marker='o', capsize=5,label='Error y-axis',
+    #              alpha=ALPHA1)
     plt.xscale('log')
     plt.yscale('log')
     plt.legend()
-    plt.xlabel('separation (m)')
-    plt.ylabel('structure function (rad$^2$)')
+    plt.xlabel('Separation (m)')
+    plt.ylabel('Structure function (rad$^2$)')
     plt.xlim(radius.min(),radius.max()*2)
     plt.ylim(np.nanmin(theoretical_structure_function)/10,
-             np.nanmax(theoretical_structure_function)*10)
+              np.nanmax(theoretical_structure_function)*10)
     # plt.title('{:d}'.format(RANDOM)
     #         + 'structure_function\n'
     #         + SAVENAME)
@@ -1836,28 +2198,32 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     theoretical_PSD = psd_function(r0, N, pixel_scale, L0, l0)[int(N/2),int(N/2 + 1) : ]
     kolmogorov_PSD = kolmogorov_psd_function(r0, N, pixel_scale)[int(N/2),int(N/2 + 1) : ]
     f = (np.arange(N/2-1) + 1)/N/pixel_scale
+    
+    a1,a2,a3 = log_bin_with_error(f,mean_PSD_x,error_mean_PSD_x)
+    b1,b2,b3 = log_bin_with_error(f,mean_PSD_y,error_mean_PSD_y)
+    
     plt.plot(f, theoretical_PSD,
-             label='von Karman PSD', ls='-', marker='')
+              label='von Karman', ls='-', marker='',color='r')
     plt.plot(f, kolmogorov_PSD,
-             label='Kolmogorov PSD', ls=':', marker='')
+              label='Kolmogorov', ls='--', marker='',color='b')
     # print(f.shape,mean_PSD_x.shape,error_mean_PSD_x.shape,PSD.shape)
-    plt.errorbar(f, mean_PSD_x,
-                 yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
-                 label='measured x-axis',alpha=ALPHA2)
-    plt.errorbar(f, mean_PSD_y,
-                 yerr=error_mean_PSD_y,ls='',marker='o', capsize=5,
-                 label='measured y-axis',alpha=ALPHA2)
-    plt.errorbar(f, np.abs(mean_PSD_x - theoretical_PSD),
-                 yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
-                 label='abs difference x-axis',alpha=ALPHA2)
-    plt.errorbar(f, np.abs(mean_PSD_y - theoretical_PSD),
-                 yerr=error_mean_PSD_y,ls='',marker='o', capsize=5,
-                 label='abs difference y-axis',alpha=ALPHA2)
+    plt.errorbar(a1, a2,
+                  yerr=a3,ls='',marker='o', capsize=5,
+                  label='Measured x-axis',alpha=ALPHA2,color='c')
+    plt.errorbar(b1, b2,
+                  yerr=b3,ls='',marker='o', capsize=5,
+                  label='Measured y-axis',alpha=ALPHA2,color='m')
+    # plt.errorbar(f, np.abs(mean_PSD_x - theoretical_PSD),
+    #              yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
+    #              label='Error x-axis',alpha=ALPHA2)
+    # plt.errorbar(f, np.abs(mean_PSD_y - theoretical_PSD),
+    #              yerr=error_mean_PSD_y,ls='',marker='o', capsize=5,
+    #              label='Error y-axis',alpha=ALPHA2)
     plt.ylim(np.nanmin(theoretical_PSD)/10,np.nanmax(theoretical_PSD)*10)
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('spatial frequency (1/m)')
-    plt.ylabel('phase structure function (rad$^2$ m$^2$)')
+    plt.xlabel('Spatial frequency (1/m)')
+    plt.ylabel('Phase power spectrum density (rad$^2$ m$^2$)')
     # plt.title('{:d}'.format(RANDOM)
     #         + 'PSD\n'
     #         + SAVENAME)
@@ -1877,17 +2243,19 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     adjust = (1 - 1.42*e**(1./3.) + 3.70*e**2 - 4.01*e**(7./3.) + 4.21*e**4 - 4.00*e**(13./3.))
     L0TipTiltVariance = theoretical_variance_ZernikeCoeff[:2] * adjust
     
-    plt.plot(modes, theoretical_variance_ZernikeCoeff, label='Kolmogorov',marker='',ls='-')
+    temp = np.copy(theoretical_variance_ZernikeCoeff)
+    temp[:2] = L0TipTiltVariance
+    plt.plot(modes, temp, label='von Karman',color='r')
+    plt.plot(modes, theoretical_variance_ZernikeCoeff, label='Kolmogorov',marker='',ls='-',color='b')
     plt.errorbar(modes, variance_ZernikeCoeff, yerr=error_variance_ZernikeCoeff,
-                 label='measured', marker='o', ls='', capsize=5)
-    plt.plot(modes[:2], L0TipTiltVariance, label='von Karman tip/tilt variance')
+                  label='Measured', marker='o', ls='', capsize=5,color='c')
     theoretical_variance_ZernikeCoeff[:2] = theoretical_variance_ZernikeCoeff[:2] * adjust
-    plt.errorbar(modes, np.abs(variance_ZernikeCoeff - theoretical_variance_ZernikeCoeff),
-                 yerr=error_variance_ZernikeCoeff,
-                 label='abs difference', marker='o', ls='', capsize=5)
+    # plt.errorbar(modes, np.abs(variance_ZernikeCoeff - theoretical_variance_ZernikeCoeff),
+    #              yerr=error_variance_ZernikeCoeff,
+    #              label='Error', marker='o', ls='', capsize=5)
     plt.yscale('log')
-    plt.xlabel('zernike modes')
-    plt.ylabel('variance of zernike coefficient (rad$^2$)')
+    plt.xlabel('Zernike modes')
+    plt.ylabel('Variance of coefficient (rad$^2$)')
     plt.legend()
     plt.ylim(np.nanmin(theoretical_variance_ZernikeCoeff)/10, np.nanmax(theoretical_variance_ZernikeCoeff)*10)
     # plt.title('{:d}'.format(RANDOM)
@@ -1902,20 +2270,20 @@ def testPhaseScreen(inputFileName, saveFile=True, saveFigure=True):
     if saveFile == True:
         
         myvar = {'structure_function_x' : structure_function_x,
-                 'structure_function_y' : structure_function_y,
-                 'error_structure_function_x' : error_structure_function_x,
-                 'error_structure_function_y' : error_structure_function_y,
-                 'theoretical_structure_function' : theoretical_structure_function,
+                  'structure_function_y' : structure_function_y,
+                  'error_structure_function_x' : error_structure_function_x,
+                  'error_structure_function_y' : error_structure_function_y,
+                  'theoretical_structure_function' : theoretical_structure_function,
                  
-                 'mean_PSD_x' : mean_PSD_x,
-                 'PSD_y' : mean_PSD_y,
-                 'mean_PSD_y' : error_mean_PSD_x,
-                 'error_PSD_y' : error_mean_PSD_y,
-                 'theoretical_PSD' : theoretical_PSD,
+                  'mean_PSD_x' : mean_PSD_x,
+                  'PSD_y' : mean_PSD_y,
+                  'mean_PSD_y' : error_mean_PSD_x,
+                  'error_PSD_y' : error_mean_PSD_y,
+                  'theoretical_PSD' : theoretical_PSD,
                  
-                 'variance_ZernikeCoeff' : variance_ZernikeCoeff,
-                 'error_variance_ZernikeCoeff' : error_variance_ZernikeCoeff,
-                 'theoretical_variance_ZernikeCoeff' : theoretical_variance_ZernikeCoeff}
+                  'variance_ZernikeCoeff' : variance_ZernikeCoeff,
+                  'error_variance_ZernikeCoeff' : error_variance_ZernikeCoeff,
+                  'theoretical_variance_ZernikeCoeff' : theoretical_variance_ZernikeCoeff}
 
         with open(SAVENAME + '.pkl', 'wb') as file:
             pickle.dump(myvar, file)
@@ -1975,7 +2343,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     # plt.plot(radius, theoretical_structure_function,
     #          label='von Karman Structure Function', ls='-', marker='')
     plt.plot(radius, kolmogorov_structure_function,
-             label='Kolmogorov Structure Function', ls=':', marker='')
+             label='Kolmogorov Structure Function', ls='--', marker='')
     plt.errorbar(radius, structure_function_x,
                  yerr=error_structure_function_x,
                  ls='',marker='o', capsize=5,label='measured x-axis',
@@ -2021,7 +2389,7 @@ def testPhaseScreenKolmogorov(inputFileName, saveFile=True, saveFigure=True):
     # plt.plot(f, theoretical_PSD,
     #          label='von Karman PSD', ls='-', marker='')
     plt.plot(f, kolmogorov_PSD,
-             label='Kolmogorov PSD', ls=':', marker='')
+             label='Kolmogorov PSD', ls='--', marker='')
     plt.errorbar(f, mean_PSD_x,
                  yerr=error_mean_PSD_x,ls='',marker='o', capsize=5,
                  label='measured x-axis',alpha=ALPHA2)
