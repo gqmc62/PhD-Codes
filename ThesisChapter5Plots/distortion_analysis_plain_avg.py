@@ -4998,17 +4998,25 @@ plt.show()
 svd_A = np.zeros((19,50,123),dtype=float)
 svd_B = np.zeros((19,50,83),dtype=float)
 svd_C = np.zeros((19,50,48),dtype=float)
-
+scaled_svd_A = np.zeros((19,50,123),dtype=float)
+scaled_svd_B = np.zeros((19,50,83),dtype=float)
+scaled_svd_C = np.zeros((19,50,48),dtype=float)
+from sklearn.preprocessing import StandardScaler
 for i in range(19):
     for j in range(50):
-        _,svd_A[i,j],_ = np.linalg.svd(IM_A[i,j])
-        _,svd_B[i,j],_ = np.linalg.svd(IM_B[i,j])
-        _,svd_C[i,j],_ = np.linalg.svd(IM_C[i,j])
+        _,svd_A[i,j],_ = np.linalg.svd(IM_A[i,j])#[2:])
+        _,svd_B[i,j],_ = np.linalg.svd(IM_B[i,j])#[2:])
+        _,svd_C[i,j],_ = np.linalg.svd(IM_C[i,j])#[2:])
         svd_A[i,j] /= svd_A[i,j].max()
         svd_B[i,j] /= svd_B[i,j].max()
         svd_C[i,j] /= svd_C[i,j].max()
-
-
+        scaled_IM_A = StandardScaler().fit_transform(IM_A[i,j])#[2:])
+        scaled_IM_B = StandardScaler().fit_transform(IM_B[i,j])#[2:])
+        scaled_IM_C = StandardScaler().fit_transform(IM_C[i,j])#[2:])
+        _,scaled_svd_A[i,j],_ = np.linalg.svd(scaled_IM_A)
+        _,scaled_svd_B[i,j],_ = np.linalg.svd(scaled_IM_B)
+        _,scaled_svd_C[i,j],_ = np.linalg.svd(scaled_IM_C)
+        
 
 
 plt.figure(figsize=(6,4))
@@ -5027,6 +5035,29 @@ plt.hlines(0.05,0,120,color='k')
 plt.legend()
 plt.savefig('svd-distort.png',dpi=600,bbox_inches='tight')
 plt.show()
+
+plt.figure(figsize=(6,4))
+for i in range(18):
+    for j in range(20):
+        plt.plot(svd_A[i+1,j],color='tab:blue',alpha=0.01)
+plt.plot(svd_A[0].mean(0),color='tab:blue',label='regular svd')
+plt.hlines(0.05,0,120,color='k')
+plt.vlines([np.where(svd_A[0].mean(0)<=0.05)[0][0]],svd_A.min(),svd_A.max(),color='k')
+
+for i in range(18):
+    for j in range(20):
+        plt.plot(1-np.cumsum(scaled_svd_A[i+1,j])/scaled_svd_A[i+1,j].sum(),color='tab:orange',alpha=0.01)
+plt.plot(1-np.cumsum(scaled_svd_A[0].mean(0))/scaled_svd_A[0].mean(0).sum(),color='tab:orange',label='cumulative power')
+plt.xlabel('Matrix mode')
+plt.ylabel('Normalized SVD')
+plt.yscale('log')
+# plt.hlines(1-0.99,0,120,color='k')
+plt.legend()
+plt.savefig('cum-svd-distort.png',dpi=600,bbox_inches='tight')
+plt.show()
+
+
+
 
 A = np.copy(svd_A)
 # Example array
@@ -5657,6 +5688,135 @@ plt.xlabel('Expected $RMS_{AS}$ (%)')
 plt.ylim(1,500)
 plt.legend()
 plt.savefig('fix-compare-control-as-simple.pdf', bbox_inches='tight')
+plt.show()
+
+###############################################################################
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+import numpy as np
+threshold_power = 0.9998#1-1/(IM.shape[-1]*IM.shape[-2])
+
+
+IM = np.copy(IM_A[...,2:,:])
+perfect_IM = np.copy(perfect_IM_A[...,2:,:])
+# threshold_power = 1-1/(IM.shape[-1]*IM.shape[-2])
+
+M0 = np.copy(perfect_IM[0])
+
+# Assume M shape is (m, n)
+X_scaled = StandardScaler().fit_transform(M0)  # center and scale columns
+pca = PCA(n_components=min(M0.shape))          # up to rank(M) components
+X_pca = pca.fit_transform(X_scaled)
+power = pca.explained_variance_ratio_
+cumulative_power = np.zeros_like(power)
+for i in range(power.shape[0]):
+    cumulative_power[i] = power[:i].sum()
+plt.plot(1-cumulative_power,color='k')
+plt.hlines([1-threshold_power],0,M0.shape[0],color='k',ls='--')
+plt.vlines([np.where(cumulative_power>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='k',ls='--')
+# plt.yscale('log')
+# plt.show()
+
+M = np.copy(IM[16])
+cumulative_all = np.zeros((M.shape[0],cumulative_power.shape[0]),dtype=float)
+for i in range(M.shape[0]):
+    Mi = M[i]
+    X_scaled = StandardScaler().fit_transform(Mi)  # center and scale columns
+    pca = PCA(n_components=min(Mi.shape))          # up to rank(M) components
+    X_pca = pca.fit_transform(X_scaled)
+    power = pca.explained_variance_ratio_
+    cumulative_power = np.zeros_like(power)
+    for j in range(power.shape[0]):
+        cumulative_power[j] = power[:j].sum()
+    cumulative_all[i] = cumulative_power
+    plt.plot(1-cumulative_power,color='r',alpha=0.1)
+    
+plt.plot(np.arange(cumulative_all.shape[-1]),1-cumulative_all.mean(0),color='b')#,yerr=cumulative_all.std(0))
+# plt.hlines([1-threshold_power],0,M0.shape[0],color='r',ls='--')
+plt.vlines([np.where(cumulative_all.mean(0)>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='r',ls='--')
+
+# IM = np.copy(IM_B[...,2:,:])
+# perfect_IM = np.copy(perfect_IM_B[...,2:,:])
+# # threshold_power = 1-1/(IM.shape[-1]*IM.shape[-2])
+
+# M0 = np.copy(perfect_IM[0])
+
+# # Assume M shape is (m, n)
+# X_scaled = StandardScaler().fit_transform(M0)  # center and scale columns
+# pca = PCA(n_components=min(M0.shape))          # up to rank(M) components
+# X_pca = pca.fit_transform(X_scaled)
+# power = pca.explained_variance_ratio_
+# cumulative_power = np.zeros_like(power)
+# for i in range(power.shape[0]):
+#     cumulative_power[i] = power[:i].sum()
+# plt.plot(1-cumulative_power,color='k')
+# plt.hlines([1-threshold_power],0,M0.shape[0],color='k',ls='--')
+# plt.vlines([np.where(cumulative_power>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='k',ls='--')
+# # plt.yscale('log')
+# # plt.show()
+
+# M = np.copy(IM[16])
+# cumulative_all = np.zeros((M.shape[0],cumulative_power.shape[0]),dtype=float)
+# for i in range(M.shape[0]):
+#     Mi = M[i]
+#     X_scaled = StandardScaler().fit_transform(Mi)  # center and scale columns
+#     pca = PCA(n_components=min(Mi.shape))          # up to rank(M) components
+#     X_pca = pca.fit_transform(X_scaled)
+#     power = pca.explained_variance_ratio_
+#     cumulative_power = np.zeros_like(power)
+#     for j in range(power.shape[0]):
+#         cumulative_power[j] = power[:j].sum()
+#     cumulative_all[i] = cumulative_power
+#     plt.plot(1-cumulative_power,color='r',alpha=0.1)
+    
+# plt.plot(np.arange(cumulative_all.shape[-1]),1-cumulative_all.mean(0),color='b')#,yerr=cumulative_all.std(0))
+# # plt.hlines([1-threshold_power],0,M0.shape[0],color='r',ls='--')
+# plt.vlines([np.where(cumulative_all.mean(0)>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='r',ls='--')
+
+# IM = np.copy(IM_C[...,2:,:])
+# perfect_IM = np.copy(perfect_IM_C[...,2:,:])
+# # threshold_power = 1-1/(IM.shape[-1]*IM.shape[-2])
+
+# M0 = np.copy(perfect_IM[0])
+
+
+# # Assume M shape is (m, n)
+# X_scaled = StandardScaler().fit_transform(M0)  # center and scale columns
+# pca = PCA(n_components=min(M0.shape))          # up to rank(M) components
+# X_pca = pca.fit_transform(X_scaled)
+# power = pca.explained_variance_ratio_
+# cumulative_power = np.zeros_like(power)
+# for i in range(power.shape[0]):
+#     cumulative_power[i] = power[:i].sum()
+# plt.plot(1-cumulative_power,color='k')
+# plt.hlines([1-threshold_power],0,M0.shape[0],color='k',ls='--')
+# plt.vlines([np.where(cumulative_power>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='k',ls='--')
+# # plt.yscale('log')
+# # plt.show()
+
+# M = np.copy(IM[16])
+# cumulative_all = np.zeros((M.shape[0],cumulative_power.shape[0]),dtype=float)
+# for i in range(M.shape[0]):
+#     Mi = M[i]
+#     X_scaled = StandardScaler().fit_transform(Mi)  # center and scale columns
+#     pca = PCA(n_components=min(Mi.shape))          # up to rank(M) components
+#     X_pca = pca.fit_transform(X_scaled)
+#     power = pca.explained_variance_ratio_
+#     cumulative_power = np.zeros_like(power)
+#     for j in range(power.shape[0]):
+#         cumulative_power[j] = power[:j].sum()
+#     cumulative_all[i] = cumulative_power
+#     plt.plot(1-cumulative_power,color='r',alpha=0.1)
+    
+# plt.plot(np.arange(cumulative_all.shape[-1]),1-cumulative_all.mean(0),color='b')#,yerr=cumulative_all.std(0))
+# # plt.hlines([1-threshold_power],0,M0.shape[0],color='r',ls='--')
+# plt.vlines([np.where(cumulative_all.mean(0)>=threshold_power)[0][0]],cumulative_power.min(),cumulative_power.max(),color='r',ls='--')
+
+
+
+
+plt.yscale('log')
 plt.show()
 
 

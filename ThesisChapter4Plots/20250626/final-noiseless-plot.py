@@ -1344,4 +1344,168 @@ ls_list=['-','--','-.',':']
 #     plt.show()
 
 
+###########################################################################
+
+
+ir0, idor0, irytov, ihha = np.indices(Ig_rms[...,1].shape)
+
+v_r0 = (r0[ir0]).flatten()
+v_dor0 = (dor0[idor0]).flatten()
+v_rytov = (Rytov[irytov]).flatten()
+v_hha = (H_HA[ihha]).flatten()
+v = (np.copy(Ig_rms[...,1])).flatten()
+
+pos_nan  = np.where(np.isnan(v))
+v_r0 = np.delete(v_r0,pos_nan)
+v_dor0 = np.delete(v_dor0,pos_nan)
+v_rytov = np.delete(v_rytov,pos_nan)
+v_hha = np.delete(v_hha,pos_nan)
+v = np.delete(v,pos_nan)
+
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
+
+# build feature matrix properly: shape (n_samples, 4)
+X = np.array([v_r0, v_dor0, v_rytov, v_hha]).T
+y = np.copy(v)
+
+# standardize features
+X_scaled = StandardScaler().fit_transform(X)
+
+# apply PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+print("Explained variance ratio:", pca.explained_variance_ratio_)
+
+# optional: dataframe to inspect
+df_pca = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
+df_pca["y"] = y
+
+from sklearn.linear_model import LinearRegression
+
+model = LinearRegression()
+model.fit(X, y)
+
+print("Coefficients:", model.coef_) # v_r0,v_dor0,...
+print("Intercept:", model.intercept_)
+print("R²:", model.score(X, y))
+
+model_predict = model.coef_@X.T + model.intercept_
+plt.plot(y,model_predict,ls='',marker='.')
+plt.plot(y,y)
+plt.xscale('log')
+plt.yscale('log')
+plt.show()
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+df = pd.DataFrame({
+    "r0": v_r0,
+    "dor0": v_dor0,
+    "rytov": v_rytov,
+    "hha": v_hha,
+    "y": y
+})
+
+plt.figure(figsize=(6,5))
+sns.heatmap(df.corr(), annot=False, cmap="coolwarm", center=0)
+plt.title("Correlation Matrix")
+plt.show()
+
+fig, axs = plt.subplots(2, 2, figsize=(10,8))
+
+features = ["r0","dor0","rytov","hha"]
+for ax, f in zip(axs.flat, features):
+    ax.scatter(df[f], df["y"], alpha=0.6)
+    ax.set_xlabel(f)
+    ax.set_ylabel("y")
+
+plt.suptitle("y vs Each Input Feature")
+plt.tight_layout()
+plt.show()
+
+from sklearn.linear_model import LinearRegression
+
+model = LinearRegression().fit(X, y)
+y_pred = model.predict(X)
+
+plt.figure(figsize=(6,6))
+# plt.scatter(y, y_pred-y, alpha=0.6)
+plt.scatter(y, y_pred, alpha=0.6)
+plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--')
+# plt.hlines([0],y.min(),y.max(),color='r',ls='--')
+plt.xlabel("True y")
+plt.ylabel("Predicted y")
+plt.title(f"Linear Regression (R² = {model.score(X,y):.2f})")
+plt.show()
+
+plt.figure(figsize=(7,6))
+sc = plt.scatter(X_pca[:,0], X_pca[:,1], c=y, cmap="viridis", alpha=0.7)
+plt.colorbar(sc, label="y")
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.title("PCA of Inputs (colored by y)")
+plt.show()
+
+
+model_pcr = LinearRegression().fit(X_pca, y)
+y_pcr_pred = model_pcr.predict(X_pca)
+
+plt.figure(figsize=(6,6))
+plt.scatter(y, y_pcr_pred, alpha=0.6)
+plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--')
+plt.xlabel("True y")
+plt.ylabel("Predicted y (PCR)")
+plt.title(f"Principal Component Regression (R² = {model_pcr.score(X_pca,y):.2f})")
+plt.show()
+
+################################################################################
+
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+import pandas as pd
+import numpy as np
+
+# Build feature matrix: shape (n_samples, n_features)
+X = np.array([v_r0, v_dor0, v_rytov, v_hha]).T
+y = np.copy(v)
+
+# Standardize features
+X_scaled = StandardScaler().fit_transform(X)
+
+# Apply PCA with 3 components
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(X_scaled)
+
+print("Explained variance ratio:", pca.explained_variance_ratio_)
+print("Cumulative variance explained:", pca.explained_variance_ratio_.cumsum())
+
+# Principal Component Regression
+model_pcr = LinearRegression()
+model_pcr.fit(X_pca, y)
+y_pcr_pred = model_pcr.predict(X_pca)
+
+print("PCR R²:", model_pcr.score(X_pca, y))
+
+# Optional: DataFrame to inspect
+df_pca = pd.DataFrame(X_pca, columns=["PC1", "PC2", "PC3"])
+df_pca["y"] = y
+
+
+###############################################################################
+
+X_scaled = StandardScaler().fit_transform(X)
+
+C = 1/(v.shape[0])*X_scaled.T@X_scaled
+eigenvalues, eigenvectors = np.linalg.eig(C)
+
+ordered_eigenvalues = np.sort(eigenvalues)[::-1]
+
+for i in range(5):
+    print(ordered_eigenvalues[:i].sum()/eigenvalues.sum())
 

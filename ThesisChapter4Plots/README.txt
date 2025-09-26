@@ -1,32 +1,46 @@
-Use timing{:}.py with cProfile to measure time spent --> make output to profiling_result{:}-{:}.txt
-Use extract-data-new.py to extract & combine profiling data --> combined-data.pkl
-then also the same file to plot timing data
+0. Code that I am using for the sh-wfs,ig-g are listed in
+	-1Directory/Codes/my_WFSC.py -- circular aperture
+	-1Directory/Codes/MyWFS.py -- square aperture
 
-Use Ultimate.py to generate phase screens --> AllIGPhase
-Use anaylse_new2pad.py to compare g, ig, ft slopes --> Slopes --> Ultimate_output.pkl
-Use IGNoiseless.py to plot g-ft & ig-ft plots
-I think ANALYSE_FTIG_NONOISE_SCINTILLATION.py is better...
+	This thesis only uses the square aperture for the final report.
+	
+1. I use 20250626/final-timingall.py to measure time.
+	the code that are meausured is in -1Directory/Codes/my_WFSC.py, -1Directory/Codes/MyWFS.py, and -1Directory/Codes/mypropagationclass.py
 
-Use MAkeSHWFSImage.py to generate shwfs image from existing turbulence --> WFSImages
-Use noisy_slope_reduced_data.py to generate noise slopes --> Slopes
-Use ch4-noise-new.py to analyse noisy slopes to extract noise values --> NoiseVar.pkl
-Use plot-noise.py to make plots
+	the result is in 20250626/time_use_time_all.pkl
+	then is plotted using 20250626/final-plot-time.py
+	plots are in 20250626
 
-to show if they are near gauss or not … try near_gauss_or_not_final.py
+	data in the table is based on the result and calculated using 20250626/estimate-sim-time.xlsx
 
+2. I generate scintillation phase screen from Ultimate.py.
+	Though the original file is lost, the derivative version of it exists in Ultimate_Extra.py, which is adjusted to generate only a selected few conditions.
+	This code generate propagated turbulence without using any cheating/shortcut/reducing that was introduced in my Chapter 3, thus a limiting condition.
 
-NONE of this is actually circular aperture. they are all square aperture … lol
-at least for the noisy one. guaranteed.
-now I need to double check the noiseless version....
+	This will generate Ultimate_input.pkl storing simulating parameters and phase screens in Ultimate_input.pkl or 20250626/IGPhaseScreen/Ultimate_input.pkl
 
-No!!! there actually is some data with circular aperture.
-But some files are actually used wrong functions.
-firstly, the my_WFSC have the circular aperture. This is cool and correct. but well the rest of my thesis doesn't have any circular aperture in a lenslet. so this should be for a square aperture instead.
-secondly, the MyWFS is a square aperture, but the g-tilt return an average OPD in rad over a pixel difference not the OPD over the whole subaperture. it needs to be scaled by U.shape[0]. Easy fix can be done. I fixed the code now.
+	containing preprogation ground and high altitude phases (20250626/IGPhaseScreen/ps_GL/* and 20250626/IGPhaseScreen/ps_HA/*) and
+	the combine propagated complex amplitude (20250626/IGPhaseScreen/U_tot/*)
 
-Anyway this is too much of a mess. I should just redo the data for this part.
+	There is one turbulence condition missing that could have been simulated. --> 5cm r0, 3d/r0, 0.1 rytov, 15km hha. I think only a limiting number of the screen is not lost, but the analysis I had scrapped the whole set out.
+	
+	20250626MakeSHWFSImage.py is used to generate WFS image.
+	The wfs image is in 20250626/IGPhaseScreen/Image/*
 
-Fuck. The circular aperture or not actually has more implication in my thesis.
-I measured the time spent using the circular aperture. I'm too lazy to redo the analysis now. this is an easy fix as well.
+3. Study noiseless condition.
+	20250626/final-NoiselessIG.py grab 20250626/IGPhaseScreen/U_tot/* measure slope for different cases
+	og --> meaning using 64x64 of 64x64 for cog + all threshold
+	no-ft-bias --> actually is 17x17 of 64x64 for cog + all threshold. not really no bias!
 
-But well all of my data in ch4 is circular aperture so this is fine??
+	slopes are in 20250626/NoiselessSquarePupilSlopes-no-ft-bias.pkl and 20250626/NoiselessSquarePupilSlopes-og.pkl
+
+	then analyse and plot using 20250626/final-noiseless-plot.py
+	the plots are in 20250626
+
+4. Study noise on scintillation cases.
+	20250626/final-SHWFS_NOISYSLOPE_GENERATOR-noscintillation.py and 20250626/final-SHWFS_NOISYSLOPE_GENERATOR-withscintillation.py
+	grab wfs images in 20250626/IGPhaseScreen/Image/* add noises then measure slope 
+	the noisy slopes are in 20250626/Slopes/*
+
+	final-shwfs-noise-plot.py analyse and generate plot
+	results are in 20250626/noisyslope for some reason.
